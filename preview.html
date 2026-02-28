@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+    <meta http-equiv="X-UA-Compatible" content="IE=9; IE=8; IE=7; IE=edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>MeTVe Online Television</title>
+    <link href="Content/Site.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+    <form id="form1" runat="server">
+        <div class="page-wrap">
+            <div class="topbar">
+                <div class="logo">MeTVe Online Television</div>
+                <div class="top-meta">
+                    <span id="authState">Guest</span>
+                    <span id="connState" class="status status-down">API/Socket: Disconnected</span>
+                </div>
+            </div>
+
+
+            <div class="legacy-nav">
+                <ul>
+                    <li data-menu="home">Home</li><li data-menu="channels">Channels</li><li data-menu="creator">Creator Studio</li><li data-menu="playout">Playout</li><li data-menu="live">Live Stream</li><li data-menu="graphics">Graphics/CG</li><li data-menu="sms">SMS/Chat</li><li data-menu="quiz">Quiz/Games</li><li data-menu="ads">Ads/Revenue</li><li data-menu="library">Library</li><li data-menu="monitor">Monitoring</li><li data-menu="v2">MeTVe V2</li><li data-menu="settings">Settings</li>
+                </ul>
+            </div>
+            <div class="legacy-subnav panel">
+                <strong>Quick Menu:</strong>
+                <span id="menuHint">Home dashboard loaded.</span>
+                <div class="subnav-links">
+                    <a href="#" id="menuNewChannel">+ New Channel</a>
+                    <a href="#" id="menuGoLive">▶ Go Live</a>
+                    <a href="#" id="menuUpload">⬆ Upload Media</a>
+                    <a href="#" id="menuPromo">★ Promote Channel</a>
+                    <a href="#" id="menuLogs">☰ Open Logs</a>
+                    <a href="#" id="menuSync">⟳ Sync Local</a>
+                    <a href="MeTVeV2.aspx" id="menuV2">⇢ Open V2 Page</a>
+                </div>
+            </div>
+
+            <div class="layout-2col">
+                <div class="sidebar panel">
+                    <h3>User Account</h3>
+                    <table class="form-table compact">
+                        <tr><td>Email</td><td><input id="loginEmail" type="text" placeholder="user@metve.tv" /></td></tr>
+                        <tr><td>Password</td><td><input id="loginPassword" type="password" /></td></tr>
+                        <tr><td>Remember</td><td><input id="rememberMe" type="checkbox" checked="checked" /></td></tr>
+                    </table>
+                    <div class="actions stack">
+                        <button type="button" id="btnSignIn">Sign In</button>
+                        <button type="button" id="btnCreateAccount">Create Account</button>
+                        <button type="button" id="btnSignOut">Sign Out</button>
+                    </div>
+                    <div id="authResult" class="result"></div>
+                    <div class="old-browser-note">Legacy Browser Mode: optimized for 2011-era desktop browsers (IE9+/old WebKit).</div>
+
+                    <h3>My Channels</h3>
+                    <select id="channelSelect" size="7" class="channel-list"></select>
+                    <div class="actions stack">
+                        <button type="button" id="btnLoadChannels">Refresh Channels</button>
+                        <button type="button" id="btnCloneChannel">Clone Channel</button>
+                        <button type="button" id="btnArchiveChannel">Archive Channel</button>
+                        <button type="button" id="btnGoLiveFun">Go Live (Fun Mode)</button>
+                        <button type="button" id="btnSyncChannels">Sync Local Channels</button>
+                    </div>
+
+                    <h3>Library Search</h3>
+                    <input id="librarySearch" type="text" placeholder="Search videos, songs, ads, idents..." />
+                    <div class="actions"><button type="button" id="btnLibrarySearch">Search</button></div>
+                    <pre id="searchLog" class="mini-log"></pre>
+
+                    <h3>MeTVe Menu Features</h3>
+                    <ul class="menu module-menu">
+                        <li>TV Playout Engine</li>
+                        <li>Live Stream Switch</li>
+                        <li>Media Composer</li>
+                        <li>Graphics & Branding</li>
+                        <li>SMS / Chat Moderation</li>
+                        <li>Quiz / Games</li>
+                        <li>Ads & Monetization</li>
+                        <li>Revenue Analytics</li>
+                        <li>Broadcast Monitoring</li>
+                    </ul>
+                </div>
+
+                <div class="content">
+                    <div class="panel grid-2">
+                        <div>
+                            <h2>TV / Radio Preview</h2>
+                            <div class="preview-box">
+                                <div class="preview-head">Channel Output Preview (SD/HD/UHD)</div>
+                                <div class="preview-screen" id="previewScreen">No source loaded</div>
+                                <div class="preview-meta">Outputs: RTMP / HLS / NDI / SDI</div>
+                            </div>
+                        </div>
+                        <div>
+                            <h2>Channel Design & Time Zone</h2>
+                            <table class="form-table compact">
+                                <tr><td>Theme</td><td><input id="brandingTheme" type="text" value="Nostalgia VIP" /></td></tr>
+                                <tr><td>Language</td><td><input id="language" type="text" value="en-US" /></td></tr>
+                                <tr><td>Timezone</td><td><input id="timezone" type="text" value="UTC" /></td></tr>
+                                <tr><td>Ticker</td><td><input id="tickerText" type="text" value="Welcome to MeTVe" /></td></tr>
+                            </table>
+                        </div>
+                    </div>
+
+
+                    <div class="panel grid-2">
+                        <div>
+                            <h2>Live Stream Engine (New)</h2>
+                            <table class="form-table compact">
+                                <tr><td>Mode</td><td><select id="liveLatency"><option>Low Latency</option><option>Normal</option></select></td></tr>
+                                <tr><td>Outputs</td><td><input id="liveOutputs" value="RTMP, HLS, WebRTC" /></td></tr>
+                                <tr><td>Bitrate Ladder</td><td><input id="bitrateLadder" value="1080p/720p/480p" /></td></tr>
+                                <tr><td>Platforms</td><td><input id="multiPlatform" value="YouTube, Twitch, Social Embeds" /></td></tr>
+                            </table>
+                            <div class="actions"><button type="button" id="btnStartLive">Start Live Broadcast</button></div>
+                            <div id="liveResult" class="result"></div>
+                        </div>
+                        <div>
+                            <h2>Live Analytics</h2>
+                            <pre id="liveAnalytics" class="mini-log">Viewers: 0
+Avg Watch: 0m
+Bitrate: --</pre>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <h2>Creator Studio: Create / Save Channel</h2>
+                        <table class="form-table">
+                            <tr><td>Channel Name</td><td><input id="channelName" type="text" maxlength="80" /></td></tr>
+                            <tr><td>Slug</td><td><input id="channelSlug" type="text" maxlength="64" placeholder="my-channel" /></td></tr>
+                            <tr><td>Mode</td><td><select id="channelMode"><option value="public">Public</option><option value="private">Private</option><option value="premium">Premium</option></select></td></tr>
+                            <tr><td>Channel Format</td><td><select id="channelFormat"><option value="all">All</option><option value="slide-tv">Slide TV</option><option value="video-tv">Video TV</option><option value="radio-tv">Radio TV</option><option value="vip">VIP</option><option value="ringtone-tv">Ringtone TV</option><option value="chat">Chat</option><option value="games">Games</option><option value="other">Other</option></select></td></tr>
+                            <tr><td>Output Profile</td><td><select id="outputProfile"><option value="SD">SD</option><option value="HD">HD</option><option value="FHD">Full HD</option><option value="UHD">UHD</option></select></td></tr>
+                            <tr><td>Live Mode</td><td><select id="liveMode"><option>Auto</option><option>Live Assist</option><option>Emergency</option></select></td></tr>
+                            <tr><td>External Sources</td><td><input id="externalSources" value="YouTube, VidLii, Internet Archive" /></td></tr>
+                        </table>
+                        <div class="actions">
+                            <button type="button" id="btnCreateChannel">Create Channel</button>
+                            <button type="button" id="btnSaveChannel">Save Channel</button>
+                            <button type="button" id="btnDraftChannel">Save Draft</button>
+                            <button type="button" id="btnReconnect">Reconnect Socket</button>
+                        </div>
+                        <div id="channelResult" class="result"></div>
+                    </div>
+
+                    <div class="panel grid-2">
+                        <div>
+                            <h2>Media Composer Library</h2>
+                            <div class="library-grid">
+                                <button type="button" class="folder-btn" data-folder="shows">Add Shows (Folder)</button>
+                                <button type="button" class="folder-btn" data-folder="movies">Add Movies (Folder)</button>
+                                <button type="button" class="folder-btn" data-folder="commercials">Add Commercials (Folder)</button>
+                                <button type="button" class="folder-btn" data-folder="bumpers">Add Bumpers (Multi)</button>
+                                <button type="button" class="folder-btn" data-folder="songs">Add Songs (Folder/Multi)</button>
+                                <button type="button" class="folder-btn" data-folder="idents">Add Idents (Multi)</button>
+                                <button type="button" class="folder-btn" data-folder="promos">Add Promos (Folder)</button>
+                                <button type="button" class="folder-btn" data-folder="graphics">Add Graphics/Images/GIFs</button>
+                            </div>
+                            <div class="drop-area" id="dropArea">Drop video/audio/images/GIF files here</div>
+                            <input id="mediaInput" type="file" multiple />
+                            <div class="actions"><button type="button" id="btnUploadMedia">Queue Upload</button></div>
+                            <pre id="uploadLog" class="mini-log"></pre>
+                        </div>
+                        <div>
+                            <h2>Scheduling + Alerts</h2>
+                            <ul>
+                                <li>Automated 24/7 playlists + video blocks + schedule fillers.</li>
+                                <li>Fixed start times for locked clips.</li>
+                                <li>On-air changes after publish.</li>
+                                <li>Smart alerts for clashes and free slots.</li>
+                            </ul>
+                            <div class="actions"><button type="button" id="btnSimulateAlert">Simulate Alert</button></div>
+                            <pre id="alertLog" class="mini-log"></pre>
+                        </div>
+                    </div>
+
+
+
+
+
+                    <div class="panel grid-2">
+                        <div>
+                            <h2>Playlist Editor (Drag & Drop)</h2>
+                            <div class="playlist-wrap">
+                                <div>
+                                    <h4>Library Clips</h4>
+                                    <ul id="playlistLibrary" class="drag-list">
+                                        <li draggable="true">Movie: Retro Action Intro</li>
+                                        <li draggable="true">Promo: Weekend Marathon</li>
+                                        <li draggable="true">Commercial: Sponsor A 30s</li>
+                                        <li draggable="true">Bumper: Coming Up Next</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4>On-Air Playlist</h4>
+                                    <ul id="playlistSchedule" class="drag-list drop-list"></ul>
+                                </div>
+                            </div>
+                            <div class="actions">
+                                <button type="button" id="btnAutoSchedule">Auto Schedule 24/7</button>
+                                <button type="button" id="btnFillerInsert">Insert Filler</button>
+                                <button type="button" id="btnEmergencyOverride">Emergency Override</button>
+                            </div>
+                            <pre id="playlistLog" class="mini-log"></pre>
+                        </div>
+                        <div>
+                            <h2>Revenue / Monetization Dashboard</h2>
+                            <table class="form-table compact">
+                                <tr><td>SMS Revenue</td><td><span id="smsRevenue">$0.00</span></td></tr>
+                                <tr><td>Ad Revenue</td><td><span id="adRevenue">$0.00</span></td></tr>
+                                <tr><td>Votes</td><td><span id="voteCount">0</span></td></tr>
+                                <tr><td>Premium Subs</td><td><span id="subCount">0</span></td></tr>
+                            </table>
+                            <div class="actions">
+                                <button type="button" id="btnSimRevenue">Simulate Revenue Tick</button>
+                                <button type="button" id="btnQuizRound">Run Quiz Round</button>
+                            </div>
+                            <pre id="revenueLog" class="mini-log"></pre>
+                        </div>
+                    </div>
+
+                    <div class="panel grid-2">
+                        <div>
+                            <h2>Control Room Presets (2003-2010 Style)</h2>
+                            <div class="actions">
+                                <button type="button" id="btnSceneChat">Chat Mode</button>
+                                <button type="button" id="btnSceneClip">Clip Mode</button>
+                                <button type="button" id="btnSceneAd">Ad Mode</button>
+                                <button type="button" id="btnEmergencyText">Emergency Text</button>
+                                <button type="button" id="btnToggleSafeArea">CRT Safe Area</button>
+                            </div>
+                            <pre id="controlLog" class="mini-log"></pre>
+                        </div>
+                        <div>
+                            <h2>Interactive Engine</h2>
+                            <div class="actions">
+                                <button type="button" id="btnModerateApprove">Approve SMS</button>
+                                <button type="button" id="btnModerateReject">Reject SMS</button>
+                                <button type="button" id="btnRunPoll">Run Poll + Winner</button>
+                                <button type="button" id="btnCallQueue">Call Queue</button>
+                                <button type="button" id="btnGameScore">Game Scoreboard</button>
+                            </div>
+                            <pre id="interactiveLog" class="mini-log"></pre>
+                        </div>
+                    </div>
+
+
+                    <div class="panel grid-2">
+                        <div>
+                            <h2>Broadcast Automation Pro (Extended)</h2>
+                            <ul>
+                                <li>Frame-accurate multi-channel scheduling with snap-to-next event.</li>
+                                <li>Automatic EPG generation from current on-air schedule.</li>
+                                <li>SCTE-35/SCTE-104 trigger simulation for ad breaks.</li>
+                                <li>Traffic ingest hooks for automatic content loading.</li>
+                                <li>High-availability flover and backup channel sync.</li>
+                            </ul>
+                            <div class="actions">
+                                <button type="button" id="btnGenEpg">Generate EPG</button>
+                                <button type="button" id="btnSnapSchedule">Snap Schedule</button>
+                                <button type="button" id="btnScteTrigger">Run SCTE Trigger</button>
+                                <button type="button" id="btnFailoverSim">Failover Sim</button>
+                            </div>
+                            <pre id="automationLog" class="mini-log"></pre>
+                        </div>
+                        <div>
+                            <h2>Playback / Audio / Caption / Network</h2>
+                            <table class="form-table compact">
+                                <tr><td>Codec Profile</td><td><input id="codecProfile" value="MPEG-2/H.264/H.265/MXF/MOV/TS" /></td></tr>
+                                <tr><td>Scaling</td><td><input id="scalingMode" value="Auto up/downscale + aspect correct" /></td></tr>
+                                <tr><td>Audio Channels</td><td><input id="audioChannels" value="16" /></td></tr>
+                                <tr><td>Caption Mode</td><td><input id="captionMode" value="Subtitles + Closed Caption" /></td></tr>
+                                <tr><td>IP Outputs</td><td><input id="ipOutputs" value="UDP, RTMP, SRT, NDI" /></td></tr>
+                            </table>
+                            <div class="actions">
+                                <button type="button" id="btnApplyPlayback">Apply Playback Profile</button>
+                                <button type="button" id="btnCertLog">Write Certification Log</button>
+                            </div>
+                            <pre id="playbackLog" class="mini-log"></pre>
+                        </div>
+                    </div>
+
+                    <div class="panel grid-2">
+                        <div>
+                            <h2>MeTVe Mega Capabilities Menu</h2>
+                            <ul>
+                                <li>Core Playout: SD/HD/UHD, frame-accurate automation, live assist, emergency override.</li>
+                                <li>Media Composer: shows/movies/commercials/bumpers/songs/idents/promos + AI tagging.</li>
+                                <li>Graphics/CG: multilayer logos, lower thirds, tickers, PIP/split-screen, countdown/clock.</li>
+                                <li>Interactive: SMS/chat moderation, polls, quizzes, leaderboards, call queue + IVR style.</li>
+                                <li>Distribution: RTMP/HLS/WebRTC/UDP/SRT/NDI/SDI and social simulcast profile.</li>
+                            </ul>
+                            <div class="actions">
+                                <button type="button" id="btnAiModeration">AI Moderation</button>
+                                <button type="button" id="btnExportLogs">Export Logs</button>
+                            </div>
+                            <pre id="opsLog" class="mini-log"></pre>
+                        </div>
+                        <div>
+                            <h2>Reliability & Sync Center</h2>
+                            <table class="form-table compact">
+                                <tr><td>Socket Health</td><td><span id="socketHealth">Not initialized</span></td></tr>
+                                <tr><td>API Health</td><td><span id="apiHealth">Unknown</span></td></tr>
+                                <tr><td>Pending Local Channels</td><td><span id="pendingChannels">0</span></td></tr>
+                            </table>
+                            <div class="actions">
+                                <button type="button" id="btnHealthCheck">Run Health Check</button>
+                                <button type="button" id="btnForceResync">Force Resync</button>
+                            </div>
+                            <pre id="syncLog" class="mini-log"></pre>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <h2>Super Long Feature Matrix</h2>
+                        <div class="feature-columns">
+                            <ul>
+                                <li>Core Playout: SD/HD/FHD/UHD, cut/fade transitions, loop/random, emergency override, daily/weekly scheduling.</li>
+                                <li>Video & Media: MP4/MOV/AVI/WMV/MPEG-2/TS/MKV/WebM + audio/images/GIF + external streams.</li>
+                                <li>Graphics/OSD: BUG logo opacity, lower thirds, Arabic/English tickers, glow/drop shadows, full-screen cards.</li>
+                                <li>Broadcast Outputs: SDI/Composite, PAL/NTSC simulation, NDI/IP, RTMP/HLS/WebRTC, low-latency mixing.</li>
+                                <li>Control Room: presets, operator trigger buttons, clock/date overlays, ad/promo insert, as-run logs.</li>
+                            </ul>
+                            <ul>
+                                <li>SMS/Chat: gateway-ready ingestion, moderation queue, nickname/country flags, VIP color modes.</li>
+                                <li>Voting/Contest: live counters, percentages, auto-close polls, random winner draw, leaderboards.</li>
+                                <li>Call/IVR: multi-line call queue, caller prompts, region phone blocks, real-time interaction counters.</li>
+                                <li>Audio: BGM playback, ducking, voice-over support, multi-track output and mixer panel placeholders.</li>
+                                <li>Enterprise: role permissions, audit trail, backup/disaster mode, health alerts, export JSON/CSV.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+
+                    <div class="panel grid-2">
+                        <div>
+                            <h2>Creator Freedom Hub</h2>
+                            <ul>
+                                <li>Create unlimited channels and brand them your way.</li>
+                                <li>Advertise your channel, project, promos, and events.</li>
+                                <li>Entertain viewers with live, scheduled, chat, quiz, and game content.</li>
+                                <li>Run your channel however you like — just like cable TV.</li>
+                            </ul>
+                            <div class="actions">
+                                <button type="button" id="btnPromoteChannel">Promote Current Channel</button>
+                                <button type="button" id="btnViewerHype">Hype Viewers</button>
+                            </div>
+                            <div id="freedomResult" class="result"></div>
+                        </div>
+                        <div>
+                            <h2>Now Playing Social Feed</h2>
+                            <pre id="socialLog" class="mini-log"></pre>
+                        </div>
+                    </div>
+
+                    <div class="panel grid-2">
+                        <div>
+                            <h2>Advertise Your Project</h2>
+                            <table class="form-table compact">
+                                <tr><td>Project Name</td><td><input id="adProjectName" value="My Indie Show" /></td></tr>
+                                <tr><td>Link</td><td><input id="adProjectLink" value="https://example.org" /></td></tr>
+                                <tr><td>Message</td><td><input id="adProjectMessage" value="Now streaming on MeTVe" /></td></tr>
+                            </table>
+                            <div class="actions"><button type="button" id="btnPublishProjectAd">Publish Project Ad</button></div>
+                            <div id="adResult" class="result"></div>
+                        </div>
+                        <div>
+                            <h2>Realtime Events</h2>
+                            <pre id="eventLog" class="event-log"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    <script type="text/javascript">
+(function(){
+    var ua = navigator.userAgent || "";
+    var isLegacy = /MSIE\s(7|8|9|10)\./.test(ua) || /Trident\/(5|6)\./.test(ua);
+    var src = isLegacy ? "Scripts/metve-legacy.js" : "Scripts/metve-app.js";
+    document.write('<scr'+'ipt src="'+src+'" type="text/javascript"></scr'+'ipt>');
+})();
+</script>
+</body>
+</html>
