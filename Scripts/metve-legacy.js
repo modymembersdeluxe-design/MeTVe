@@ -64,7 +64,7 @@
             })(items[i]);
         }
 
-        var links = ['menuNewChannel','menuGoLive','menuUpload','menuPromo','menuLogs'];
+        var links = ['menuNewChannel','menuGoLive','menuUpload','menuPromo','menuLogs','menuSync'];
         for (var k = 0; k < links.length; k++) {
             var el = byId(links[k]);
             if (el) {
@@ -76,6 +76,9 @@
         }
         if (byId('menuPromo')) {
             byId('menuPromo').onclick = function () { byId('btnPublishProjectAd').click(); return false; };
+        }
+        if (byId('menuSync')) {
+            byId('menuSync').onclick = function () { log('eventLog', 'Legacy sync: local-only mode active.'); return false; };
         }
     }
 
@@ -135,6 +138,12 @@
     byId('btnSceneChat').onclick = function () { log('controlLog', 'Legacy preset: CHAT.'); };
     byId('btnSceneClip').onclick = function () { log('controlLog', 'Legacy preset: CLIP.'); };
     byId('btnSceneAd').onclick = function () { log('controlLog', 'Legacy preset: AD.'); };
+
+    if (byId('btnSyncChannels')) { byId('btnSyncChannels').onclick = function () { log('eventLog', 'Legacy sync: local channels already active.'); }; }
+    if (byId('btnAiModeration')) { byId('btnAiModeration').onclick = function () { log('opsLog', 'Legacy AI moderation simulated.'); }; }
+    if (byId('btnExportLogs')) { byId('btnExportLogs').onclick = function () { log('opsLog', 'Legacy export prepared (local).'); }; }
+    if (byId('btnHealthCheck')) { byId('btnHealthCheck').onclick = function () { log('syncLog', 'Legacy health: API offline mode, local channels=' + channels.length); }; }
+    if (byId('btnForceResync')) { byId('btnForceResync').onclick = function () { log('syncLog', 'Legacy resync skipped (local-only).'); }; }
 
     wireLegacyMenu();
     setMenuHint('Home dashboard loaded.');

@@ -33,6 +33,7 @@
                     <a href="#" id="menuUpload">⬆ Upload Media</a>
                     <a href="#" id="menuPromo">★ Promote Channel</a>
                     <a href="#" id="menuLogs">☰ Open Logs</a>
+                    <a href="#" id="menuSync">⟳ Sync Local</a>
                 </div>
             </div>
 
@@ -59,6 +60,7 @@
                         <button type="button" id="btnCloneChannel">Clone Channel</button>
                         <button type="button" id="btnArchiveChannel">Archive Channel</button>
                         <button type="button" id="btnGoLiveFun">Go Live (Fun Mode)</button>
+                        <button type="button" id="btnSyncChannels">Sync Local Channels</button>
                     </div>
 
                     <h3>Library Search</h3>
@@ -276,6 +278,37 @@ Bitrate: --</pre>
                                 <button type="button" id="btnCertLog">Write Certification Log</button>
                             </div>
                             <pre id="playbackLog" class="mini-log"></pre>
+                        </div>
+                    </div>
+
+                    <div class="panel grid-2">
+                        <div>
+                            <h2>MeTVe Mega Capabilities Menu</h2>
+                            <ul>
+                                <li>Core Playout: SD/HD/UHD, frame-accurate automation, live assist, emergency override.</li>
+                                <li>Media Composer: shows/movies/commercials/bumpers/songs/idents/promos + AI tagging.</li>
+                                <li>Graphics/CG: multilayer logos, lower thirds, tickers, PIP/split-screen, countdown/clock.</li>
+                                <li>Interactive: SMS/chat moderation, polls, quizzes, leaderboards, call queue + IVR style.</li>
+                                <li>Distribution: RTMP/HLS/WebRTC/UDP/SRT/NDI/SDI and social simulcast profile.</li>
+                            </ul>
+                            <div class="actions">
+                                <button type="button" id="btnAiModeration">AI Moderation</button>
+                                <button type="button" id="btnExportLogs">Export Logs</button>
+                            </div>
+                            <pre id="opsLog" class="mini-log"></pre>
+                        </div>
+                        <div>
+                            <h2>Reliability & Sync Center</h2>
+                            <table class="form-table compact">
+                                <tr><td>Socket Health</td><td><span id="socketHealth">Not initialized</span></td></tr>
+                                <tr><td>API Health</td><td><span id="apiHealth">Unknown</span></td></tr>
+                                <tr><td>Pending Local Channels</td><td><span id="pendingChannels">0</span></td></tr>
+                            </table>
+                            <div class="actions">
+                                <button type="button" id="btnHealthCheck">Run Health Check</button>
+                                <button type="button" id="btnForceResync">Force Resync</button>
+                            </div>
+                            <pre id="syncLog" class="mini-log"></pre>
                         </div>
                     </div>
 

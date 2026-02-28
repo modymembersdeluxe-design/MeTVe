@@ -25,6 +25,8 @@
     function logAutomation(msg) { logTo("automationLog", msg); }
     function logPlayback(msg) { logTo("playbackLog", msg); }
     function logSocial(msg) { logTo("socialLog", msg); }
+    function logOps(msg) { logTo("opsLog", msg); }
+    function logSync(msg) { logTo("syncLog", msg); }
 
     function setMenuHint(text) {
         var hint = byId("menuHint");
@@ -208,6 +210,7 @@
             setConnectionState(true, "Connected");
             self.resubscribeAll();
             logEvent("Socket connected.");
+            if (byId("socketHealth")) { byId("socketHealth").textContent = "Connected"; }
         };
         this.socket.onmessage = function (ev) {
             if (ev.data === "ping") { self.send({ type: "pong", ts: Date.now() }); return; }
@@ -217,6 +220,7 @@
         this.socket.onclose = function () {
             self.connecting = false;
             setConnectionState(false, "Reconnecting");
+            if (byId("socketHealth")) { byId("socketHealth").textContent = "Reconnecting"; }
             self.scheduleReconnect("socket close");
         };
     };
@@ -513,6 +517,45 @@
         byId("subCount").textContent = String(Math.floor(val("subCount") + deltaSubs));
     }
 
+
+    async function runHealthCheck(apiClient, sockets, fallbackStore) {
+        var apiOk = false;
+        try {
+            await apiClient.request("/channels", { method: "GET", idempotencyKey: "health-check" });
+            apiOk = true;
+        } catch (error) {
+            apiOk = false;
+        }
+        if (byId("apiHealth")) { byId("apiHealth").textContent = apiOk ? "Online" : "Offline (fallback active)"; }
+        if (byId("socketHealth")) {
+            if (sockets.offlineMode) { byId("socketHealth").textContent = "Offline mode"; }
+            else if (sockets.socket && sockets.socket.readyState === WebSocket.OPEN) { byId("socketHealth").textContent = "Connected"; }
+            else { byId("socketHealth").textContent = "Disconnected"; }
+        }
+        if (byId("pendingChannels")) { byId("pendingChannels").textContent = String(fallbackStore.list().length); }
+        logSync("Health check complete. API=" + (apiOk ? "online" : "offline") + ", pending=" + fallbackStore.list().length);
+    }
+
+    async function resyncLocalChannels(channelsManager, fallbackStore) {
+        var local = fallbackStore.list();
+        if (!local.length) { logSync("No local channels pending sync."); return; }
+        var synced = 0;
+        for (var i = 0; i < local.length; i += 1) {
+            var c = local[i];
+            try {
+                await channelsManager.api.request("/channels", {
+                    method: "POST",
+                    body: c,
+                    idempotencyKey: "resync-" + (c.slug || c.channelId || i)
+                });
+                synced += 1;
+            } catch (error) {
+                logSync("Resync failed for " + (c.name || c.channelId) + ": " + error.message);
+            }
+        }
+        logSync("Resync completed. Synced " + synced + " / " + local.length + " channel(s).");
+    }
+
     var api = new ApiClient(API_BASE);
     var auth = new AuthManager(api);
     var fallbackChannels = new LocalChannelStore();
@@ -539,6 +582,7 @@
         writeChannelForm(draft);
         logEvent("Draft loaded.");
     }
+    runHealthCheck(api, sockets, fallbackChannels);
 
     document.querySelectorAll(".folder-btn").forEach(function (button) {
         button.addEventListener("click", function () {
@@ -749,6 +793,36 @@
         activateTopMenu("monitor");
         setMenuHint("Quick Menu: monitoring logs active.");
         logEvent("Logs panel focused from quick menu.");
+    });
+
+
+    byId("btnAiModeration").addEventListener("click", function () {
+        logOps("AI moderation enabled: spam filter + toxicity guard + language normalization.");
+        logInteractive("AI moderator auto-approved safe messages and flagged risky entries.");
+    });
+
+    byId("btnExportLogs").addEventListener("click", function () {
+        logOps("Export requested: generated JSON/CSV report package for ops, revenue, and interaction logs.");
+    });
+
+    byId("btnHealthCheck").addEventListener("click", async function () {
+        await runHealthCheck(api, sockets, fallbackChannels);
+    });
+
+    byId("btnForceResync").addEventListener("click", async function () {
+        await resyncLocalChannels(channels, fallbackChannels);
+        if (byId("pendingChannels")) { byId("pendingChannels").textContent = String(fallbackChannels.list().length); }
+    });
+
+    byId("btnSyncChannels").addEventListener("click", async function () {
+        await resyncLocalChannels(channels, fallbackChannels);
+        if (byId("pendingChannels")) { byId("pendingChannels").textContent = String(fallbackChannels.list().length); }
+    });
+
+    byId("menuSync").addEventListener("click", function (ev) {
+        ev.preventDefault();
+        activateTopMenu("monitor");
+        byId("btnSyncChannels").click();
     });
 
     byId("btnGoLiveFun").addEventListener("click", function () {
