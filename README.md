@@ -4,7 +4,7 @@ MeTVe is a WebForms-style virtual interactive TV platform prototype with creator
 
 ## Implemented highlights
 
-- Professional cable-style operator dashboard with TV/Radio preview.
+- Professional cable-style operator dashboard with TV/Radio preview and channel-format targeting (Slide TV, Video TV, Radio TV, VIP, Ringtone TV, Chat, Games, Other, All).
 - User account controls: sign up, sign in, sign out.
 - Channel lifecycle: create/save/list/clone/archive with optimistic concurrency.
 - Reliability fixes for channel creation/saving:

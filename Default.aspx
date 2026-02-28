@@ -95,6 +95,7 @@ Bitrate: --</pre>
                             <tr><td>Channel Name</td><td><input id="channelName" type="text" maxlength="80" /></td></tr>
                             <tr><td>Slug</td><td><input id="channelSlug" type="text" maxlength="64" placeholder="my-channel" /></td></tr>
                             <tr><td>Mode</td><td><select id="channelMode"><option value="public">Public</option><option value="private">Private</option><option value="premium">Premium</option></select></td></tr>
+                            <tr><td>Channel Format</td><td><select id="channelFormat"><option value="all">All</option><option value="slide-tv">Slide TV</option><option value="video-tv">Video TV</option><option value="radio-tv">Radio TV</option><option value="vip">VIP</option><option value="ringtone-tv">Ringtone TV</option><option value="chat">Chat</option><option value="games">Games</option><option value="other">Other</option></select></td></tr>
                             <tr><td>Output Profile</td><td><select id="outputProfile"><option value="SD">SD</option><option value="HD">HD</option><option value="FHD">Full HD</option><option value="UHD">UHD</option></select></td></tr>
                             <tr><td>Live Mode</td><td><select id="liveMode"><option>Auto</option><option>Live Assist</option><option>Emergency</option></select></td></tr>
                             <tr><td>External Sources</td><td><input id="externalSources" value="YouTube, VidLii, Internet Archive" /></td></tr>

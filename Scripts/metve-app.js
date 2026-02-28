@@ -283,6 +283,7 @@
         if (!channel.name || channel.name.trim().length < 3) { errors.push("Channel name must be at least 3 characters."); }
         if (!/^[a-z0-9\-]{3,64}$/.test(channel.slug || "")) { errors.push("Slug must be 3-64 lowercase letters/numbers/hyphen."); }
         if (["public", "private", "premium"].indexOf(channel.mode) === -1) { errors.push("Invalid channel mode."); }
+        if (["all", "slide-tv", "video-tv", "radio-tv", "vip", "ringtone-tv", "chat", "games", "other"].indexOf(channel.channelFormat) === -1) { errors.push("Invalid channel format."); }
         if (["SD", "HD", "FHD", "UHD"].indexOf(channel.outputProfile) === -1) { errors.push("Invalid output profile."); }
         if (!channel.timezone) { errors.push("Timezone required."); }
         return errors;
@@ -376,6 +377,7 @@
             name: byId("channelName").value,
             slug: byId("channelSlug").value,
             mode: byId("channelMode").value,
+            channelFormat: byId("channelFormat").value,
             outputProfile: byId("outputProfile").value,
             timezone: byId("timezone").value,
             brandingTheme: byId("brandingTheme").value,
@@ -390,6 +392,7 @@
         byId("channelName").value = c.name || "";
         byId("channelSlug").value = c.slug || "";
         byId("channelMode").value = c.mode || "public";
+        byId("channelFormat").value = c.channelFormat || "all";
         byId("outputProfile").value = c.outputProfile || "HD";
         byId("timezone").value = c.timezone || "UTC";
         byId("brandingTheme").value = c.brandingTheme || "Nostalgia VIP";
@@ -410,6 +413,7 @@
             opt.dataset.version = ch.version || 1;
             opt.dataset.slug = ch.slug || "";
             opt.dataset.mode = ch.mode || "public";
+            opt.dataset.format = ch.channelFormat || "all";
             opt.dataset.output = ch.outputProfile || "HD";
             opt.dataset.timezone = ch.timezone || "UTC";
             select.appendChild(opt);
@@ -424,6 +428,7 @@
                 name: picked.text.replace(/\s*\(.+\)$/, ""),
                 slug: picked.dataset.slug,
                 mode: picked.dataset.mode,
+                channelFormat: picked.dataset.format,
                 outputProfile: picked.dataset.output,
                 timezone: picked.dataset.timezone
             });
@@ -532,7 +537,7 @@
             saveDraft(data);
             var result = await channels.createChannel(data);
             setResult("channelResult", "Channel created: " + result.channelId, false);
-            byId("previewScreen").textContent = "ON AIR: " + data.name + " | " + data.outputProfile + " | TZ " + data.timezone;
+            byId("previewScreen").textContent = "ON AIR: " + data.name + " | " + data.channelFormat + " | " + data.outputProfile + " | TZ " + data.timezone;
         } catch (error) {
             setResult("channelResult", error.message, true);
         }
@@ -585,7 +590,7 @@
     byId("btnStartLive").addEventListener("click", function () {
         var profile = byId("outputProfile").value;
         var outputs = byId("liveOutputs").value;
-        setResult("liveResult", "Live broadcast started (" + profile + ") => " + outputs, false);
+        setResult("liveResult", "Live broadcast started (" + byId("channelFormat").value + " / " + profile + ") => " + outputs, false);
         byId("liveAnalytics").textContent = "Viewers: " + Math.floor(Math.random() * 200 + 20) + "\nAvg Watch: " + Math.floor(Math.random() * 25 + 3) + "m\nBitrate: " + byId("bitrateLadder").value;
         logEvent("Live stream started: " + outputs + " | " + byId("multiPlatform").value);
     });

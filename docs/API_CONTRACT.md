@@ -19,6 +19,7 @@ Create/save requirements:
 - `Authorization`, `X-Request-Id`, `X-Idempotency-Key`
 - Save requires `If-Match` + `version` payload for optimistic concurrency.
 - Persist timezone per broadcaster location.
+- Persist `channelFormat` values: `all`, `slide-tv`, `video-tv`, `radio-tv`, `vip`, `ringtone-tv`, `chat`, `games`, `other`.
 
 ## Live stream engine
 
