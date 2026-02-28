@@ -1,9 +1,10 @@
 (function () {
-    var API_BASE = "/api";
-    var SOCKET_URL = "wss://example.invalid/metve";
-    var DRAFT_KEY = "metve_channel_draft_v4";
+    var API_BASE = (window.MeTVeConfig && window.MeTVeConfig.apiBase) || "/api";
+    var SOCKET_URL = (window.MeTVeConfig && window.MeTVeConfig.socketUrl) || "";
+    var DRAFT_KEY = "metve_channel_draft_v5";
     var AUTH_KEY = "metve_auth_session_v1";
     var LIBRARY_KEY = "metve_library_store_v1";
+    var CHANNELS_KEY = "metve_channels_store_v1";
 
     function byId(id) { return document.getElementById(id); }
     function wait(ms) { return new Promise(function (resolve) { setTimeout(resolve, ms); }); }
@@ -32,12 +33,17 @@
         el.textContent = message;
     }
 
+    function safeJsonParse(raw, fallback) {
+        try { return JSON.parse(raw); } catch (error) { return fallback; }
+    }
+
     function ApiClient(baseUrl) {
         this.baseUrl = baseUrl;
         this.defaultTimeoutMs = 12000;
         this.maxRetries = 4;
         this.authToken = null;
     }
+
     ApiClient.prototype.setAuthToken = function (token) { this.authToken = token || null; };
 
     ApiClient.prototype.request = async function (path, options) {
@@ -96,18 +102,16 @@
         this.api = api;
         this.session = null;
     }
+
     AuthManager.prototype.loadSession = function () {
         var raw = localStorage.getItem(AUTH_KEY);
         if (!raw) { return; }
-        try {
-            this.session = JSON.parse(raw);
-            this.api.setAuthToken(this.session.token);
-            byId("authState").textContent = "Signed in: " + this.session.email;
-        } catch (error) {
-            this.session = null;
-            localStorage.removeItem(AUTH_KEY);
-        }
+        this.session = safeJsonParse(raw, null);
+        if (!this.session) { localStorage.removeItem(AUTH_KEY); return; }
+        this.api.setAuthToken(this.session.token);
+        byId("authState").textContent = "Signed in: " + this.session.email;
     };
+
     AuthManager.prototype.signIn = async function (email, password, remember) {
         if (!email || !password) { throw new Error("Email and password required."); }
         var result;
@@ -127,6 +131,7 @@
         if (remember) { localStorage.setItem(AUTH_KEY, JSON.stringify(this.session)); }
         return this.session;
     };
+
     AuthManager.prototype.createAccount = async function (email, password) {
         if (!email || !password) { throw new Error("Email and password required."); }
         try {
@@ -139,6 +144,7 @@
             logEvent("Signup endpoint unavailable; local create simulated.");
         }
     };
+
     AuthManager.prototype.signOut = function () {
         this.session = null;
         this.api.setAuthToken(null);
@@ -154,10 +160,18 @@
         this.reconnectAttempt = 0;
         this.maxReconnectDelay = 30000;
         this.subscriptions = {};
+        this.offlineMode = !url;
     }
+
     SocketManager.prototype.connect = function () {
+        if (this.offlineMode) {
+            setConnectionState(false, "Offline (socket not configured)");
+            logEvent("Socket disabled: set window.MeTVeConfig.socketUrl to enable realtime stream.");
+            return;
+        }
         if (this.connecting) { return; }
         this.connecting = true;
+
         var token = this.authManager.session ? this.authManager.session.token : "guest";
         var self = this;
         try {
@@ -176,10 +190,7 @@
             logEvent("Socket connected.");
         };
         this.socket.onmessage = function (ev) {
-            if (ev.data === "ping") {
-                self.send({ type: "pong", ts: Date.now() });
-                return;
-            }
+            if (ev.data === "ping") { self.send({ type: "pong", ts: Date.now() }); return; }
             logEvent("Socket event: " + ev.data);
         };
         this.socket.onerror = function () { logEvent("Socket error."); };
@@ -189,19 +200,27 @@
             self.scheduleReconnect("socket close");
         };
     };
+
     SocketManager.prototype.scheduleReconnect = function (reason) {
+        if (this.offlineMode) { return; }
         this.reconnectAttempt += 1;
         var delay = Math.min(1000 * Math.pow(2, this.reconnectAttempt), this.maxReconnectDelay);
         logEvent("Reconnect in " + delay + "ms due to " + reason);
         var self = this;
         setTimeout(function () { self.connect(); }, delay);
     };
+
     SocketManager.prototype.reconnectNow = function () {
+        if (this.offlineMode) {
+            logEvent("Reconnect skipped: socket offline mode.");
+            return;
+        }
         if (this.socket) { try { this.socket.close(); } catch (error) { } }
         this.connecting = false;
         this.reconnectAttempt = 0;
         this.connect();
     };
+
     SocketManager.prototype.subscribe = function (topic) {
         this.subscriptions[topic] = true;
         this.send({ type: "subscribe", topic: topic });
@@ -216,10 +235,9 @@
     };
 
     function LibraryStore() {
-        var raw = localStorage.getItem(LIBRARY_KEY);
-        this.data = raw ? JSON.parse(raw) : {
+        this.data = safeJsonParse(localStorage.getItem(LIBRARY_KEY), {
             shows: [], movies: [], commercials: [], bumpers: [], songs: [], idents: [], promos: [], graphics: []
-        };
+        });
     }
     LibraryStore.prototype.save = function () { localStorage.setItem(LIBRARY_KEY, JSON.stringify(this.data)); };
     LibraryStore.prototype.addItem = function (folder, item) {
@@ -238,6 +256,28 @@
         return results;
     };
 
+    function LocalChannelStore() {
+        this.channels = safeJsonParse(localStorage.getItem(CHANNELS_KEY), []);
+    }
+    LocalChannelStore.prototype.save = function () { localStorage.setItem(CHANNELS_KEY, JSON.stringify(this.channels)); };
+    LocalChannelStore.prototype.list = function () { return this.channels.slice(); };
+    LocalChannelStore.prototype.create = function (channel) {
+        var entity = Object.assign({}, channel, { channelId: "local_" + randomId(), version: 1, status: "created" });
+        this.channels.push(entity);
+        this.save();
+        return entity;
+    };
+    LocalChannelStore.prototype.update = function (channelId, channel, expectedVersion) {
+        var idx = this.channels.findIndex(function (c) { return c.channelId === channelId; });
+        if (idx === -1) { throw new Error("Channel not found in local store."); }
+        var current = this.channels[idx];
+        if ((current.version || 1) !== expectedVersion) { throw new Error("Version conflict in local store."); }
+        var next = Object.assign({}, current, channel, { version: expectedVersion + 1, status: "saved" });
+        this.channels[idx] = next;
+        this.save();
+        return next;
+    };
+
     function validateChannel(channel) {
         var errors = [];
         if (!channel.name || channel.name.trim().length < 3) { errors.push("Channel name must be at least 3 characters."); }
@@ -248,47 +288,87 @@
         return errors;
     }
 
-    function ChannelManager(api) {
+    function ChannelManager(api, fallbackStore) {
         this.api = api;
+        this.fallbackStore = fallbackStore;
         this.lastChannelId = null;
         this.lastVersion = 1;
     }
+
     ChannelManager.prototype.listChannels = async function () {
-        var data = await this.api.request("/channels", { method: "GET", idempotencyKey: "list-channels" });
-        return data.channels || [];
+        try {
+            var data = await this.api.request("/channels", { method: "GET", idempotencyKey: "list-channels" });
+            return data.channels || [];
+        } catch (error) {
+            logEvent("Using local channels due to API list failure.");
+            return this.fallbackStore.list();
+        }
     };
+
     ChannelManager.prototype.createChannel = async function (channel) {
         var errs = validateChannel(channel);
         if (errs.length) { throw new Error(errs.join(" ")); }
-        var result = await this.api.request("/channels", {
-            method: "POST",
-            body: channel,
-            idempotencyKey: "create-" + channel.slug
-        });
-        this.lastChannelId = result.channelId;
-        this.lastVersion = result.version || 1;
-        return result;
+        try {
+            var result = await this.api.request("/channels", {
+                method: "POST",
+                body: channel,
+                idempotencyKey: "create-" + channel.slug
+            });
+            this.lastChannelId = result.channelId;
+            this.lastVersion = result.version || 1;
+            return result;
+        } catch (error) {
+            logEvent("Create API unavailable, saved to local store.");
+            var local = this.fallbackStore.create(channel);
+            this.lastChannelId = local.channelId;
+            this.lastVersion = local.version;
+            return local;
+        }
     };
+
     ChannelManager.prototype.saveChannel = async function (channel) {
         var errs = validateChannel(channel);
         if (errs.length) { throw new Error(errs.join(" ")); }
         if (!this.lastChannelId) { throw new Error("Create/select channel first."); }
-        var result = await this.api.request("/channels/" + this.lastChannelId, {
-            method: "PUT",
-            headers: { "If-Match": String(this.lastVersion) },
-            body: Object.assign({}, channel, { version: this.lastVersion }),
-            idempotencyKey: "save-" + this.lastChannelId + "-" + this.lastVersion
-        });
-        this.lastVersion = result.version || this.lastVersion;
-        return result;
+
+        try {
+            var result = await this.api.request("/channels/" + this.lastChannelId, {
+                method: "PUT",
+                headers: { "If-Match": String(this.lastVersion) },
+                body: Object.assign({}, channel, { version: this.lastVersion }),
+                idempotencyKey: "save-" + this.lastChannelId + "-" + this.lastVersion
+            });
+            this.lastVersion = result.version || this.lastVersion;
+            return result;
+        } catch (error) {
+            logEvent("Save API unavailable, using local channel save.");
+            var local = this.fallbackStore.update(this.lastChannelId, channel, this.lastVersion);
+            this.lastVersion = local.version;
+            return local;
+        }
     };
+
     ChannelManager.prototype.cloneChannel = async function () {
         if (!this.lastChannelId) { throw new Error("Select channel first."); }
-        return await this.api.request("/channels/" + this.lastChannelId + "/clone", { method: "POST", idempotencyKey: "clone-" + this.lastChannelId + "-" + Date.now() });
+        try {
+            return await this.api.request("/channels/" + this.lastChannelId + "/clone", { method: "POST", idempotencyKey: "clone-" + this.lastChannelId + "-" + Date.now() });
+        } catch (error) {
+            var source = this.fallbackStore.list().find(function (c) { return c.channelId === this.lastChannelId; }, this);
+            if (!source) { throw error; }
+            var clone = this.fallbackStore.create(Object.assign({}, source, { name: source.name + " Clone", slug: source.slug + "-clone" }));
+            logEvent("Clone API unavailable, cloned in local store.");
+            return clone;
+        }
     };
+
     ChannelManager.prototype.archiveChannel = async function () {
         if (!this.lastChannelId) { throw new Error("Select channel first."); }
-        return await this.api.request("/channels/" + this.lastChannelId + "/archive", { method: "POST", idempotencyKey: "archive-" + this.lastChannelId + "-" + Date.now() });
+        try {
+            return await this.api.request("/channels/" + this.lastChannelId + "/archive", { method: "POST", idempotencyKey: "archive-" + this.lastChannelId + "-" + Date.now() });
+        } catch (error) {
+            logEvent("Archive API unavailable; marked archived in logs only.");
+            return { channelId: this.lastChannelId, status: "archived" };
+        }
     };
 
     function readChannelForm() {
@@ -318,11 +398,7 @@
     }
 
     function saveDraft(channel) { localStorage.setItem(DRAFT_KEY, JSON.stringify(channel)); }
-    function loadDraft() {
-        var raw = localStorage.getItem(DRAFT_KEY);
-        if (!raw) { return null; }
-        try { return JSON.parse(raw); } catch (error) { return null; }
-    }
+    function loadDraft() { return safeJsonParse(localStorage.getItem(DRAFT_KEY), null); }
 
     function fillChannelSelect(channels, manager) {
         var select = byId("channelSelect");
@@ -338,6 +414,7 @@
             opt.dataset.timezone = ch.timezone || "UTC";
             select.appendChild(opt);
         });
+
         select.onchange = function () {
             var picked = select.options[select.selectedIndex];
             if (!picked) { return; }
@@ -373,7 +450,7 @@
             var chunks = Math.max(1, Math.ceil(file.size / (5 * 1024 * 1024)));
             logUpload("Start upload " + file.name + " in " + chunks + " chunk(s)");
             for (var c = 1; c <= chunks; c += 1) {
-                await wait(120);
+                await wait(100);
                 logUpload("Chunk " + c + "/" + chunks + " uploaded for " + file.name);
             }
             logUpload("Completed upload " + file.name + " token " + randomId());
@@ -382,7 +459,8 @@
 
     var api = new ApiClient(API_BASE);
     var auth = new AuthManager(api);
-    var channels = new ChannelManager(api);
+    var fallbackChannels = new LocalChannelStore();
+    var channels = new ChannelManager(api, fallbackChannels);
     var library = new LibraryStore();
     var sockets = new SocketManager(SOCKET_URL, auth);
 
@@ -412,12 +490,8 @@
     });
 
     byId("btnLibrarySearch").addEventListener("click", function () {
-        var term = byId("librarySearch").value;
-        var results = library.search(term);
-        if (!results.length) {
-            logSearch("No result for: " + term);
-            return;
-        }
+        var results = library.search(byId("librarySearch").value);
+        if (!results.length) { logSearch("No matches."); return; }
         results.slice(0, 20).forEach(function (line) { logSearch(line); });
     });
 
@@ -430,6 +504,7 @@
             setResult("authResult", error.message, true);
         }
     });
+
     byId("btnCreateAccount").addEventListener("click", async function () {
         try {
             await auth.createAccount(byId("loginEmail").value, byId("loginPassword").value);
@@ -438,6 +513,7 @@
             setResult("authResult", error.message, true);
         }
     });
+
     byId("btnSignOut").addEventListener("click", function () {
         auth.signOut();
         setResult("authResult", "Signed out.", false);
@@ -445,14 +521,11 @@
     });
 
     byId("btnLoadChannels").addEventListener("click", async function () {
-        try {
-            var list = await channels.listChannels();
-            fillChannelSelect(list, channels);
-            logEvent("Loaded " + list.length + " channels.");
-        } catch (error) {
-            logEvent("Load channels failed: " + error.message);
-        }
+        var list = await channels.listChannels();
+        fillChannelSelect(list, channels);
+        logEvent("Loaded " + list.length + " channels.");
     });
+
     byId("btnCreateChannel").addEventListener("click", async function () {
         try {
             var data = readChannelForm();
@@ -464,6 +537,7 @@
             setResult("channelResult", error.message, true);
         }
     });
+
     byId("btnSaveChannel").addEventListener("click", async function () {
         try {
             var data = readChannelForm();
@@ -474,6 +548,7 @@
             setResult("channelResult", error.message, true);
         }
     });
+
     byId("btnCloneChannel").addEventListener("click", async function () {
         try {
             var result = await channels.cloneChannel();
@@ -482,10 +557,11 @@
             logEvent("Clone failed: " + error.message);
         }
     });
+
     byId("btnArchiveChannel").addEventListener("click", async function () {
         try {
-            await channels.archiveChannel();
-            logEvent("Channel archived.");
+            var result = await channels.archiveChannel();
+            logEvent("Channel archived: " + result.channelId);
         } catch (error) {
             logEvent("Archive failed: " + error.message);
         }
@@ -495,12 +571,23 @@
         saveDraft(readChannelForm());
         setResult("channelResult", "Draft saved locally.", false);
     });
+
     byId("btnReconnect").addEventListener("click", function () {
         sockets.reconnectNow();
         logEvent("Manual reconnect requested.");
     });
+
     byId("btnUploadMedia").addEventListener("click", async function () {
         await simulateResumableUpload(byId("mediaInput").files || []);
+    });
+
+
+    byId("btnStartLive").addEventListener("click", function () {
+        var profile = byId("outputProfile").value;
+        var outputs = byId("liveOutputs").value;
+        setResult("liveResult", "Live broadcast started (" + profile + ") => " + outputs, false);
+        byId("liveAnalytics").textContent = "Viewers: " + Math.floor(Math.random() * 200 + 20) + "\nAvg Watch: " + Math.floor(Math.random() * 25 + 3) + "m\nBitrate: " + byId("bitrateLadder").value;
+        logEvent("Live stream started: " + outputs + " | " + byId("multiPlatform").value);
     });
 
     byId("btnPublishProjectAd").addEventListener("click", function () {

@@ -1,11 +1,11 @@
-# MeTVe API & Socket Contract (Accounts + Creator Studio + Library)
+# MeTVe API & Socket Contract (Live Stream + Reliable Channel Save)
 
 ## Authentication
 
 - `POST /api/auth/signup`
 - `POST /api/auth/signin`
 
-Signin returns `{ token, userId, email }` and must support persistent user sessions for creator studio access.
+Signin response: `{ token, userId, email }`.
 
 ## Channel management
 
@@ -16,23 +16,31 @@ Signin returns `{ token, userId, email }` and must support persistent user sessi
 - `POST /api/channels/{channelId}/archive`
 
 Create/save requirements:
-- Required headers: `Authorization`, `X-Request-Id`, `X-Idempotency-Key`
-- Save also requires `If-Match` and versioned body for optimistic concurrency.
-- Timezone should be stored per broadcaster location.
+- `Authorization`, `X-Request-Id`, `X-Idempotency-Key`
+- Save requires `If-Match` + `version` payload for optimistic concurrency.
+- Persist timezone per broadcaster location.
 
-## Library folders and assets
+## Live stream engine
 
 Suggested endpoints:
+- `POST /api/live/start`
+- `POST /api/live/stop`
+- `GET /api/live/analytics`
+
+Payload should include output profile, low-latency flag, bitrate ladder, outputs (RTMP/HLS/WebRTC), and multi-platform destinations.
+
+## Library and media data
+
 - `GET /api/library`
-- `POST /api/library/{folder}` (folders: shows, movies, commercials, bumpers, songs, idents, promos, graphics)
+- `POST /api/library/{folder}` (`shows`, `movies`, `commercials`, `bumpers`, `songs`, `idents`, `promos`, `graphics`)
 - `GET /api/library/search?q=`
 
 Accepted media:
-- Video/audio/images/GIF
-- Multi-format video including MP4, MOV, AVI, MPEG-2, TS, MKV, WebM
-- External source references (YouTube, VidLii, Internet Archive, live stream URL)
+- MP4, MOV, AVI, WMV, MPEG-2, TS, MKV, WebM
+- audio, images, GIF
+- external references: YouTube, VidLii, Internet Archive, live URLs
 
-## Upload pipeline (resumable)
+## Upload pipeline
 
 - `POST /api/media/uploads` => `{ uploadId, chunkSize, resumeToken }`
 - `PUT /api/media/uploads/{uploadId}/chunks/{index}`
@@ -40,21 +48,20 @@ Accepted media:
 
 ## Project advertising board
 
-Suggested endpoints:
 - `POST /api/projects/ads`
 - `GET /api/projects/ads`
-
-Payload sample: `{ project, link, message, channelId }`
 
 ## Sockets
 
 - Endpoint: `wss://<host>/socket?token=<authToken>`
-- Topics: `channel-status`, `playout-events`, `alerts`, `audience-events`
-- Heartbeat: server `ping` and client `{"type":"pong","ts":<ms>}`
+- Topics: `channel-status`, `playout-events`, `alerts`, `audience-events`, `live-analytics`
+- Heartbeat: server `ping`, client `{"type":"pong","ts":<ms>}`
 
 ## Reliability requirements
 
-- Timeout budget 12s with retry/backoff for network/429/5xx failures.
-- Idempotency keys for mutating endpoints.
-- Automatic reconnect + manual reconnect trigger.
-- Validate channel payload before save and reject corrupt requests.
+- 12s timeout + exponential retries for network/429/5xx.
+- Idempotency keys on mutating requests.
+- Auto reconnect/resubscribe when socket exists.
+- Allow client offline mode when socket URL is absent.
+- Validate channel payload before save and reject corruption.
+- Preserve create/save with local fallback storage when API is temporarily unavailable.

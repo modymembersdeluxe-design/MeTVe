@@ -67,6 +67,27 @@
                         </div>
                     </div>
 
+
+                    <div class="panel grid-2">
+                        <div>
+                            <h2>Live Stream Engine (New)</h2>
+                            <table class="form-table compact">
+                                <tr><td>Mode</td><td><select id="liveLatency"><option>Low Latency</option><option>Normal</option></select></td></tr>
+                                <tr><td>Outputs</td><td><input id="liveOutputs" value="RTMP, HLS, WebRTC" /></td></tr>
+                                <tr><td>Bitrate Ladder</td><td><input id="bitrateLadder" value="1080p/720p/480p" /></td></tr>
+                                <tr><td>Platforms</td><td><input id="multiPlatform" value="YouTube, Twitch, Social Embeds" /></td></tr>
+                            </table>
+                            <div class="actions"><button type="button" id="btnStartLive">Start Live Broadcast</button></div>
+                            <div id="liveResult" class="result"></div>
+                        </div>
+                        <div>
+                            <h2>Live Analytics</h2>
+                            <pre id="liveAnalytics" class="mini-log">Viewers: 0
+Avg Watch: 0m
+Bitrate: --</pre>
+                        </div>
+                    </div>
+
                     <div class="panel">
                         <h2>Creator Studio: Create / Save Channel</h2>
                         <table class="form-table">
