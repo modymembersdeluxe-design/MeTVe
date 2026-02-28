@@ -47,6 +47,7 @@
                         <button type="button" id="btnLoadChannels">Refresh Channels</button>
                         <button type="button" id="btnCloneChannel">Clone Channel</button>
                         <button type="button" id="btnArchiveChannel">Archive Channel</button>
+                        <button type="button" id="btnGoLiveFun">Go Live (Fun Mode)</button>
                     </div>
 
                     <h3>Library Search</h3>
@@ -271,6 +272,28 @@ Bitrate: --</pre>
                                 <li>Audio: BGM playback, ducking, voice-over support, multi-track output and mixer panel placeholders.</li>
                                 <li>Enterprise: role permissions, audit trail, backup/disaster mode, health alerts, export JSON/CSV.</li>
                             </ul>
+                        </div>
+                    </div>
+
+
+                    <div class="panel grid-2">
+                        <div>
+                            <h2>Creator Freedom Hub</h2>
+                            <ul>
+                                <li>Create unlimited channels and brand them your way.</li>
+                                <li>Advertise your channel, project, promos, and events.</li>
+                                <li>Entertain viewers with live, scheduled, chat, quiz, and game content.</li>
+                                <li>Run your channel however you like — just like cable TV.</li>
+                            </ul>
+                            <div class="actions">
+                                <button type="button" id="btnPromoteChannel">Promote Current Channel</button>
+                                <button type="button" id="btnViewerHype">Hype Viewers</button>
+                            </div>
+                            <div id="freedomResult" class="result"></div>
+                        </div>
+                        <div>
+                            <h2>Now Playing Social Feed</h2>
+                            <pre id="socialLog" class="mini-log"></pre>
                         </div>
                     </div>
 

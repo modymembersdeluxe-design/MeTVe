@@ -24,6 +24,7 @@
     function logRevenue(msg) { logTo("revenueLog", msg); }
     function logAutomation(msg) { logTo("automationLog", msg); }
     function logPlayback(msg) { logTo("playbackLog", msg); }
+    function logSocial(msg) { logTo("socialLog", msg); }
 
     function setConnectionState(ok, text) {
         var el = byId("connState");
@@ -687,6 +688,26 @@
     byId("btnCertLog").addEventListener("click", function () {
         logPlayback("Certification log written: frame-accurate monitoring checkpoint + playback hash.");
         logEvent("System certification log entry created.");
+    });
+
+
+    byId("btnGoLiveFun").addEventListener("click", function () {
+        var name = byId("channelName").value || "My Channel";
+        byId("previewScreen").textContent = "LIVE FUN MODE: " + name + " is entertaining viewers now";
+        logEvent("Fun mode enabled for " + name + ".");
+        logSocial("Viewers joined live room for " + name + ".");
+    });
+
+    byId("btnPromoteChannel").addEventListener("click", function () {
+        var name = byId("channelName").value || "My Channel";
+        setResult("freedomResult", "Promotion sent for " + name + ".", false);
+        logSocial("Promo blast: " + name + " now featured on channel directory.");
+    });
+
+    byId("btnViewerHype").addEventListener("click", function () {
+        var viewers = Math.floor(Math.random() * 500 + 50);
+        setResult("freedomResult", "Viewer hype activated: +" + viewers + " active viewers.", false);
+        logSocial("Hype event: chat, quiz, and game overlays started for audience.");
     });
 
     byId("btnStartLive").addEventListener("click", function () {

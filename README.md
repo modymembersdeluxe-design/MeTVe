@@ -24,6 +24,7 @@ MeTVe is a WebForms-style virtual interactive TV platform prototype with creator
   - local library search
   - drag/drop upload simulation with chunked progress
 - Project advertising area for creators.
+- Creator Freedom Hub: create channels, promote/advertise projects and channels, entertain viewers, and run cable-style experiences freely.
 - Drag-and-drop playlist editor with filler/auto-schedule/emergency actions.
 - Revenue dashboard simulation (SMS, ads, votes, subscriptions) and quiz round trigger.
 - Hotkey-ready control-room presets (`Alt+1` chat, `Alt+2` clip, `Alt+3` ad).
