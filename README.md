@@ -28,7 +28,7 @@ MeTVe is a WebForms-style virtual interactive TV platform prototype with creator
 - Expanded MeTVe menu system: top legacy nav + quick-menu shortcuts for channel creation, go-live, media upload, promotion, monitoring logs, and local sync actions.
 - Reliability & Sync Center: API/socket health, pending local channel count, and one-click local resync controls.
 - MeTVe Mega Capabilities menu panel covering playout, graphics, interactive, distribution, and AI moderation operations.
-- MeTVe V2 online TV page: expanded online user homepage, classic account login/sign-in flow, create/save channel management with API-first + local fallback, support for Slide TV/Video TV/Radio TV/VIP/Ringtone TV/Chat/Games/Other/All formats, TV Guide planner, media creator studio library management with folder batch actions (Shows/Movies/Commercials/Bumpers/Songs/Idents/Promos), channel and library search, project advertising page, and API/socket reliability monitor with manual reconnect.
+- MeTVe V2 online TV page: expanded online user homepage, classic account login/sign-in flow, create/save channel management with API-first + local fallback, support for Slide TV/Video TV/Radio TV/VIP/Ringtone TV/Chat/Games/Other/All formats, TV Guide planner, media creator studio library management with folder batch actions (Shows/Movies/Commercials/Bumpers/Songs/Idents/Promos), channel and library search, project advertising page, API/socket reliability monitor with manual reconnect, and a new 2011 nostalgia FX panel with glow/ticker presets.
 - Drag-and-drop playlist editor with filler/auto-schedule/emergency actions.
 - Revenue dashboard simulation (SMS, ads, votes, subscriptions) and quiz round trigger.
 - Hotkey-ready control-room presets (`Alt+1` chat, `Alt+2` clip, `Alt+3` ad).

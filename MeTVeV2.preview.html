@@ -24,6 +24,7 @@
                 <li><a href="#v2guide">TV Guide</a></li>
                 <li><a href="#v2ads">Advertise</a></li>
                 <li><a href="#v2reliability">Reliability</a></li>
+                    <li><a href="#v2nostalgia">2011 FX</a></li>
             </ul>
         </div>
 
@@ -106,6 +107,8 @@
             </div>
             <div>
                 <h3>Library Items (<span id="v2ShowCount">0</span>)</h3>
+                <input id="v2LibrarySearch" type="text" placeholder="Search library items..." />
+                <div class="actions"><button type="button" id="btnV2LibrarySearch">Search Library</button><button type="button" id="btnV2LibraryReset">Reset</button></div>
                 <div id="v2Shows" class="v2-list"></div>
             </div>
         </div>
@@ -141,6 +144,31 @@
             <div>
                 <h3>Project Ads (<span id="v2AdCount">0</span>)</h3>
                 <div id="v2Ads" class="v2-list"></div>
+            </div>
+        </div>
+
+
+        <div class="panel grid-2" id="v2nostalgia">
+            <div>
+                <h3>2011 Layout New Feature Pack</h3>
+                <ul class="v2-bullet-list">
+                    <li>Classic glass glow mode for 2011 nostalgia look.</li>
+                    <li>Ticker presets for HOT/LIVE/NEWS style operator branding.</li>
+                    <li>One-click creator studio demo presets for cable-style workflow.</li>
+                </ul>
+                <div class="actions">
+                    <button type="button" id="btnV2ToggleLegacyFx">Toggle 2011 Glow FX</button>
+                    <button type="button" id="btnV2TickerPreset">Load HOT/LIVE Ticker Preset</button>
+                </div>
+                <div id="v2NostalgiaResult" class="result"></div>
+            </div>
+            <div>
+                <h3>Preset Status</h3>
+                <div class="v2-profile">
+                    <p><strong>Theme:</strong> <span id="v2LegacyFxState">Glass Aero</span></p>
+                    <p><strong>Ticker:</strong> <span id="v2TickerState">Idle</span></p>
+                    <p><strong>Target:</strong> 2011-era cable-style interface simulation</p>
+                </div>
             </div>
         </div>
 

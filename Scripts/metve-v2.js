@@ -199,6 +199,19 @@
         return '';
     }
 
+
+    function setLegacyFx(enabled) {
+        var wrap = document.body;
+        if (!wrap) { return; }
+        if (enabled) {
+            wrap.className += (wrap.className ? ' ' : '') + 'v2-legacy-glow';
+            setText('v2LegacyFxState', 'Glow Enabled');
+        } else {
+            wrap.className = wrap.className.replace(/\bv2-legacy-glow\b/g, '').replace(/\s+/g, ' ').replace(/^\s|\s$/g, '');
+            setText('v2LegacyFxState', 'Glass Aero');
+        }
+    }
+
     function addFolderBatch(prefix, type, count) {
         for (var i = 1; i <= count; i++) {
             shows.push({ title: prefix + ' ' + i, type: type, channel: 'Library' });
@@ -383,6 +396,25 @@
             resetLibrary.onclick = function () {
                 renderShows();
                 setText('v2ShowResult', 'Library reset to full list.');
+            };
+        }
+
+
+        var legacyFxOn = false;
+        var toggleLegacyFx = byId('btnV2ToggleLegacyFx');
+        if (toggleLegacyFx) {
+            toggleLegacyFx.onclick = function () {
+                legacyFxOn = !legacyFxOn;
+                setLegacyFx(legacyFxOn);
+                setText('v2NostalgiaResult', legacyFxOn ? '2011 glow mode enabled.' : '2011 glow mode disabled.');
+            };
+        }
+
+        var tickerPreset = byId('btnV2TickerPreset');
+        if (tickerPreset) {
+            tickerPreset.onclick = function () {
+                setText('v2TickerState', 'HOT • LIVE • BREAKING • CHAT OPEN');
+                setText('v2NostalgiaResult', 'Ticker preset loaded for classic operator branding.');
             };
         }
 

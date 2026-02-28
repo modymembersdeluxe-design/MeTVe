@@ -101,3 +101,7 @@ body { margin: 0; font-family: Tahoma, Verdana, Arial, sans-serif; background: #
 .v2-folder-actions { margin: 8px 0; }
 .v2-folder-actions button { margin: 0 6px 6px 0; }
 #v2LibrarySearch { width: 70%; }
+
+.v2-legacy-glow .v2-aero { box-shadow: 0 0 18px #8fd0ff inset, 0 0 14px #5f8db8; }
+.v2-legacy-glow .topbar { background: linear-gradient(#426c98, #1f3857); }
+.v2-legacy-glow .panel { border-color: #7aa4cc; }
