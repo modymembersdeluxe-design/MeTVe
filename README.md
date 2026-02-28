@@ -1,34 +1,25 @@
-# MeTVe – Online Television (WebForms-era foundation)
+# MeTVe – Online Television (Web-based Virtual Interactive TV)
 
-MeTVe is a browser-based virtual interactive TV platform starter built in a classic ASPX/WebForms style with modern reliability behavior for API and socket connections.
+This repository contains a classic ASPX/WebForms-era operator console foundation for MeTVe, focused on account access, channel creation, creator studio workflows, media ingest, and reliability for API/socket connectivity.
 
-## Delivered foundation
+## Included in this update
 
-- 2011-style operator console layout (`Default.aspx`) for:
-  - Channel creation/save
-  - Channel list + clone/archive actions
-  - Playout profile controls
-  - Media ingest/upload panel
-  - Interactive + monetization sections
-- Reliability-first runtime (`Scripts/metve-app.js`) for:
-  - Persistent channel draft saving in `localStorage`
-  - Channel validation before API writes
-  - API timeout/retry/backoff and idempotency/correlation headers
-  - Socket reconnect, heartbeat response, auto-resubscribe, manual reconnect
-  - Channel listing + selection + version-aware save flow
-- API guidance (`docs/API_CONTRACT.md`) for stable create/save/list/clone/archive and resumable media uploads.
-
-## Platform goals represented in this update
-
-- Robust channel creation and save lifecycle
-- Real-time operator dashboard with socket events
-- Cloud-like media management workflow scaffolding
-- Scheduling/playout, interactive, graphics and monetization control surface placeholders
-- Reliability and failover-minded behavior for unstable networks
+- User account area with sign in, sign out, and create-account flows.
+- Home + Creator Studio sections for channel operations.
+- Channel manager: create/save/list/clone/archive with validation.
+- Media ingest panel with drag-and-drop + resumable upload simulation.
+- Playout configuration controls (SD/HD/FHD/UHD, live assist, failover profile).
+- Reliability-first client runtime:
+  - request timeout/retries/backoff
+  - idempotency and correlation headers
+  - optimistic concurrency for saves
+  - socket auto-reconnect and manual reconnect
+  - local draft persistence
 
 ## Files
 
-- `Default.aspx`
-- `Content/Site.css`
-- `Scripts/metve-app.js`
-- `docs/API_CONTRACT.md`
+- `Default.aspx` — primary ASPX operator console.
+- `preview.html` — HTML-renderable page used for local screenshot/testing rendering.
+- `Content/Site.css` — visual styling.
+- `Scripts/metve-app.js` — client runtime and feature logic.
+- `docs/API_CONTRACT.md` — recommended backend contract.

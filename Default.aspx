@@ -4,34 +4,50 @@
 <head runat="server">
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>MeTVe Operator Console</title>
+    <title>MeTVe Online Television</title>
     <link href="Content/Site.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
     <form id="form1" runat="server">
         <div class="page-wrap">
             <div class="topbar">
-                <div class="logo">MeTVe</div>
+                <div class="logo">MeTVe Online Television</div>
                 <div class="top-meta">
-                    <span>Mode: Master Control</span>
+                    <span id="authState">Guest</span>
                     <span id="connState" class="status status-down">API/Socket: Disconnected</span>
                 </div>
             </div>
 
             <div class="layout-2col">
                 <div class="sidebar panel">
-                    <h3>Modules</h3>
+                    <h3>Navigation</h3>
                     <ul class="menu">
-                        <li>Channel Manager</li>
+                        <li>Home Dashboard</li>
+                        <li>User Accounts</li>
+                        <li>Channels</li>
+                        <li>Creator Studio</li>
                         <li>Playout Engine</li>
-                        <li>Media Library</li>
                         <li>Live Streaming</li>
-                        <li>Graphics/Overlays</li>
-                        <li>SMS & Chat</li>
+                        <li>Media Library</li>
+                        <li>Graphics/Overlay</li>
+                        <li>Interactive Audience</li>
                         <li>Monetization</li>
-                        <li>Analytics</li>
                         <li>Failover/Flover</li>
                     </ul>
+
+                    <h3>Account Login / Sign In</h3>
+                    <table class="form-table compact">
+                        <tr><td>Email</td><td><input id="loginEmail" type="text" placeholder="user@metve.tv" /></td></tr>
+                        <tr><td>Password</td><td><input id="loginPassword" type="password" /></td></tr>
+                        <tr><td>Remember</td><td><input id="rememberMe" type="checkbox" checked="checked" /></td></tr>
+                    </table>
+                    <div class="actions stack">
+                        <button type="button" id="btnSignIn">Sign In</button>
+                        <button type="button" id="btnCreateAccount">Create Account</button>
+                        <button type="button" id="btnSignOut">Sign Out</button>
+                    </div>
+                    <div id="authResult" class="result"></div>
+
                     <h3>Channels</h3>
                     <select id="channelSelect" size="8" class="channel-list"></select>
                     <div class="actions stack">
@@ -43,33 +59,24 @@
 
                 <div class="content">
                     <div class="panel">
-                        <h2>Channel Creation & Save (Persistent API)</h2>
+                        <h2>Home & Creator Studio</h2>
+                        <ul>
+                            <li>Create/save/manage channels and operator profiles.</li>
+                            <li>Upload movies, shows, ads, songs, graphics, images, GIFs.</li>
+                            <li>Support scheduled playout, live assist, emergency override.</li>
+                            <li>Realtime audience interaction: chat, polls, overlays, alerts.</li>
+                        </ul>
+                    </div>
+
+                    <div class="panel">
+                        <h2>Create / Save Channel (Stable API)</h2>
                         <table class="form-table">
                             <tr><td>Channel Name</td><td><input id="channelName" type="text" maxlength="80" /></td></tr>
                             <tr><td>Slug</td><td><input id="channelSlug" type="text" maxlength="64" placeholder="my-channel" /></td></tr>
-                            <tr>
-                                <td>Mode</td>
-                                <td>
-                                    <select id="channelMode">
-                                        <option value="public">Public</option>
-                                        <option value="private">Private</option>
-                                        <option value="premium">Premium</option>
-                                    </select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Output Profile</td>
-                                <td>
-                                    <select id="outputProfile">
-                                        <option value="SD">SD</option>
-                                        <option value="HD">HD</option>
-                                        <option value="FHD">Full HD</option>
-                                        <option value="UHD">UHD</option>
-                                    </select>
-                                </td>
-                            </tr>
+                            <tr><td>Mode</td><td><select id="channelMode"><option value="public">Public</option><option value="private">Private</option><option value="premium">Premium</option></select></td></tr>
+                            <tr><td>Output Profile</td><td><select id="outputProfile"><option value="SD">SD</option><option value="HD">HD</option><option value="FHD">Full HD</option><option value="UHD">UHD</option></select></td></tr>
                             <tr><td>Timezone</td><td><input id="timezone" type="text" value="UTC" /></td></tr>
-                            <tr><td>Branding Theme</td><td><input id="brandingTheme" type="text" value="Classic Cable" /></td></tr>
+                            <tr><td>Theme</td><td><input id="brandingTheme" type="text" value="Classic Cable" /></td></tr>
                             <tr><td>Language</td><td><input id="language" type="text" value="en-US" /></td></tr>
                         </table>
                         <div class="actions">
@@ -84,42 +91,19 @@
                     <div class="panel grid-2">
                         <div>
                             <h2>Playout & Scheduling</h2>
-                            <ul>
-                                <li>24/7 automation, live assist, emergency override</li>
-                                <li>Frame-aware switching, fixed-time and filler blocks</li>
-                                <li>As-run logs, delay control, redundancy simulation</li>
-                            </ul>
                             <table class="form-table compact">
                                 <tr><td>Live Mode</td><td><select id="liveMode"><option>Auto</option><option>Live Assist</option><option>Emergency</option></select></td></tr>
                                 <tr><td>Primary Output</td><td><input id="primaryOutput" value="RTMP + HLS + WebRTC" /></td></tr>
                                 <tr><td>Backup Studio</td><td><input id="backupStudio" value="Flover-A" /></td></tr>
+                                <tr><td>External Sources</td><td><input id="externalSources" value="YouTube, VidLii, Internet Archive" /></td></tr>
                             </table>
                         </div>
                         <div>
-                            <h2>Media Ingest & Upload</h2>
-                            <div class="drop-area" id="dropArea">Drop files here (videos, audio, images, GIFs)</div>
+                            <h2>Media Upload</h2>
+                            <div class="drop-area" id="dropArea">Drop files: MP4/MOV/AVI/MPEG2/TS/MKV/WebM + audio/images/GIFs</div>
                             <input id="mediaInput" type="file" multiple />
                             <div class="actions"><button type="button" id="btnUploadMedia">Queue Upload</button></div>
                             <pre id="uploadLog" class="mini-log"></pre>
-                        </div>
-                    </div>
-
-                    <div class="panel grid-2">
-                        <div>
-                            <h2>Interactive Audience</h2>
-                            <ul>
-                                <li>SMS/chat moderation + auto filters</li>
-                                <li>Polls, votes, quizzes and winner automation</li>
-                                <li>Overlay triggers from realtime events</li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h2>Monetization & Ads</h2>
-                            <ul>
-                                <li>Pre/Mid/Post-roll and overlay placements</li>
-                                <li>Premium channel mode and subscription flags</li>
-                                <li>Revenue + performance report export</li>
-                            </ul>
                         </div>
                     </div>
 

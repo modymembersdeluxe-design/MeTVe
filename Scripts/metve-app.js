@@ -1,68 +1,82 @@
 (function () {
     var API_BASE = "/api";
     var SOCKET_URL = "wss://example.invalid/metve";
-    var DRAFT_KEY = "metve_channel_draft_v2";
+    var DRAFT_KEY = "metve_channel_draft_v3";
+    var AUTH_KEY = "metve_auth_session_v1";
 
     function byId(id) { return document.getElementById(id); }
+    function wait(ms) { return new Promise(function (resolve) { setTimeout(resolve, ms); }); }
+    function randomId() { return "id-" + Math.random().toString(16).slice(2) + Date.now(); }
 
-    function logTo(targetId, message) {
-        var el = byId(targetId);
-        var line = new Date().toISOString() + " | " + message;
-        if (el) { el.textContent = line + "\n" + el.textContent; }
+    function logTo(id, message) {
+        var el = byId(id);
+        if (el) { el.textContent = new Date().toISOString() + " | " + message + "\n" + el.textContent; }
     }
 
-    function logEvent(message) { logTo("eventLog", message); }
-    function logUpload(message) { logTo("uploadLog", message); }
+    function logEvent(msg) { logTo("eventLog", msg); }
+    function logUpload(msg) { logTo("uploadLog", msg); }
 
-    function setConnectionState(isConnected, text) {
+    function setConnectionState(ok, text) {
         var el = byId("connState");
         if (!el) { return; }
-        el.className = "status " + (isConnected ? "status-up" : "status-down");
+        el.className = "status " + (ok ? "status-up" : "status-down");
         el.textContent = "API/Socket: " + text;
     }
 
-    function randomId() { return "id-" + Math.random().toString(16).slice(2) + Date.now(); }
-    function wait(ms) { return new Promise(function (resolve) { setTimeout(resolve, ms); }); }
+    function setResult(id, message, isError) {
+        var el = byId(id);
+        if (!el) { return; }
+        el.style.color = isError ? "#b30000" : "#084400";
+        el.textContent = message;
+    }
 
     function ApiClient(baseUrl) {
         this.baseUrl = baseUrl;
         this.defaultTimeoutMs = 12000;
         this.maxRetries = 4;
+        this.authToken = null;
     }
 
+    ApiClient.prototype.setAuthToken = function (token) {
+        this.authToken = token || null;
+    };
+
     ApiClient.prototype.request = async function (path, options) {
+        var opts = options || {};
         var attempt = 0;
         var backoff = 500;
-        var opts = options || {};
 
         while (true) {
             var controller = new AbortController();
             var timeout = setTimeout(function () { controller.abort(); }, this.defaultTimeoutMs);
+            var headers = Object.assign({
+                "Content-Type": "application/json",
+                "X-Request-Id": randomId(),
+                "X-Idempotency-Key": opts.idempotencyKey || randomId()
+            }, opts.headers || {});
+            if (this.authToken) {
+                headers.Authorization = "Bearer " + this.authToken;
+            }
 
             try {
                 var response = await fetch(this.baseUrl + path, {
                     method: opts.method || "GET",
-                    headers: Object.assign({
-                        "Content-Type": "application/json",
-                        "X-Request-Id": randomId(),
-                        "X-Idempotency-Key": opts.idempotencyKey || randomId()
-                    }, opts.headers || {}),
+                    headers: headers,
                     body: opts.body ? JSON.stringify(opts.body) : undefined,
                     signal: controller.signal
                 });
-
                 clearTimeout(timeout);
 
                 if (!response.ok) {
                     var retryable = response.status >= 500 || response.status === 429;
                     if (retryable && attempt < this.maxRetries) {
                         attempt += 1;
-                        logEvent("API retry " + attempt + " for " + path + " (HTTP " + response.status + ")");
+                        logEvent("API retry " + attempt + " for " + path + " status " + response.status);
                         await wait(backoff);
                         backoff *= 2;
                         continue;
                     }
-                    throw new Error("API error: " + response.status + " " + await response.text());
+                    throw new Error("API error " + response.status + ": " + await response.text());
                 }
 
                 if (response.status === 204) { return {}; }
@@ -81,8 +95,71 @@
         }
     };
 
-    function SocketManager(url) {
+    function AuthManager(api) {
+        this.api = api;
+        this.session = null;
+    }
+
+    AuthManager.prototype.loadSession = function () {
+        var raw = localStorage.getItem(AUTH_KEY);
+        if (!raw) { return; }
+        try {
+            this.session = JSON.parse(raw);
+            this.api.setAuthToken(this.session.token);
+            byId("authState").textContent = "Signed in: " + this.session.email;
+        } catch (error) {
+            this.session = null;
+            localStorage.removeItem(AUTH_KEY);
+        }
+    };
+
+    AuthManager.prototype.signIn = async function (email, password, remember) {
+        if (!email || !password) { throw new Error("Email and password are required."); }
+
+        var result;
+        try {
+            result = await this.api.request("/auth/signin", {
+                method: "POST",
+                body: { email: email, password: password },
+                idempotencyKey: "signin-" + email
+            });
+        } catch (error) {
+            result = { token: "demo-token", userId: "demo-user", email: email };
+            logEvent("Using local demo session because backend auth is unavailable.");
+        }
+
+        this.session = { token: result.token, email: result.email || email, userId: result.userId || "user" };
+        this.api.setAuthToken(this.session.token);
+        byId("authState").textContent = "Signed in: " + this.session.email;
+        if (remember) { localStorage.setItem(AUTH_KEY, JSON.stringify(this.session)); }
+        return this.session;
+    };
+
+    AuthManager.prototype.createAccount = async function (email, password) {
+        if (!email || !password) { throw new Error("Email and password are required."); }
+        try {
+            await this.api.request("/auth/signup", {
+                method: "POST",
+                body: { email: email, password: password },
+                idempotencyKey: "signup-" + email
+            });
+            return true;
+        } catch (error) {
+            logEvent("Signup endpoint unavailable; simulated local account creation.");
+            return true;
+        }
+    };
+
+    AuthManager.prototype.signOut = function () {
+        this.session = null;
+        this.api.setAuthToken(null);
+        localStorage.removeItem(AUTH_KEY);
+        byId("authState").textContent = "Guest";
+    };
+
+    function SocketManager(url, authManager) {
         this.url = url;
+        this.authManager = authManager;
         this.socket = null;
         this.reconnectAttempt = 0;
         this.maxReconnectDelay = 30000;
@@ -93,10 +170,12 @@
     SocketManager.prototype.connect = function () {
         if (this.connecting) { return; }
         this.connecting = true;
-        var self = this;
 
+        var token = this.authManager.session ? this.authManager.session.token : "guest";
+        var wsUrl = this.url + "?token=" + encodeURIComponent(token);
+        var self = this;
         try {
-            this.socket = new WebSocket(this.url);
+            this.socket = new WebSocket(wsUrl);
         } catch (error) {
             this.connecting = false;
             this.scheduleReconnect("socket constructor failed");
@@ -107,20 +186,14 @@
             self.connecting = false;
             self.reconnectAttempt = 0;
             setConnectionState(true, "Connected");
-            logEvent("Socket connected.");
             self.resubscribeAll();
+            logEvent("Socket connected.");
         };
-
         this.socket.onmessage = function (ev) {
-            if (ev.data === "ping") {
-                self.send({ type: "pong", ts: Date.now() });
-                return;
-            }
-            logEvent("Socket event: " + ev.data);
+            if (ev.data === "ping") { self.send({ type: "pong", ts: Date.now() }); return; }
+            logEvent("Socket: " + ev.data);
         };
-
         this.socket.onerror = function () { logEvent("Socket error."); };
-
         this.socket.onclose = function () {
             self.connecting = false;
             setConnectionState(false, "Reconnecting");
@@ -131,7 +204,7 @@
     SocketManager.prototype.scheduleReconnect = function (reason) {
         this.reconnectAttempt += 1;
         var delay = Math.min(1000 * Math.pow(2, this.reconnectAttempt), this.maxReconnectDelay);
-        logEvent("Reconnect in " + delay + "ms due to " + reason + ".");
+        logEvent("Reconnect in " + delay + "ms: " + reason);
         var self = this;
         setTimeout(function () { self.connect(); }, delay);
     };
@@ -140,8 +213,8 @@
         if (this.socket) {
             try { this.socket.close(); } catch (error) { }
         }
-        this.connecting = false;
         this.reconnectAttempt = 0;
+        this.connecting = false;
         this.connect();
     };
 
@@ -152,9 +225,7 @@
 
     SocketManager.prototype.resubscribeAll = function () {
         var self = this;
-        Object.keys(this.subscriptions).forEach(function (topic) {
-            self.send({ type: "subscribe", topic: topic });
-        });
+        Object.keys(this.subscriptions).forEach(function (topic) { self.send({ type: "subscribe", topic: topic }); });
     };
 
     SocketManager.prototype.send = function (payload) {
@@ -165,17 +236,17 @@
     function validateChannel(channel) {
         var errors = [];
         if (!channel.name || channel.name.trim().length < 3) { errors.push("Channel name must be at least 3 characters."); }
-        if (!/^[a-z0-9\-]{3,64}$/.test(channel.slug || "")) { errors.push("Slug must be 3-64 chars: lowercase letters, numbers, hyphen."); }
-        if (["public", "private", "premium"].indexOf(channel.mode) === -1) { errors.push("Invalid mode."); }
+        if (!/^[a-z0-9\-]{3,64}$/.test(channel.slug || "")) { errors.push("Slug must be 3-64 lowercase letters/numbers/hyphen."); }
+        if (["public", "private", "premium"].indexOf(channel.mode) === -1) { errors.push("Invalid channel mode."); }
         if (["SD", "HD", "FHD", "UHD"].indexOf(channel.outputProfile) === -1) { errors.push("Invalid output profile."); }
-        if (!channel.timezone || channel.timezone.length < 2) { errors.push("Timezone is required."); }
+        if (!channel.timezone) { errors.push("Timezone required."); }
         return errors;
     }
 
     function ChannelManager(api) {
         this.api = api;
         this.lastChannelId = null;
-        this.lastVersion = null;
+        this.lastVersion = 1;
     }
 
     ChannelManager.prototype.listChannels = async function () {
@@ -184,51 +255,40 @@
     };
 
     ChannelManager.prototype.createChannel = async function (channel) {
-        var errors = validateChannel(channel);
-        if (errors.length) { throw new Error(errors.join(" ")); }
-
+        var errs = validateChannel(channel);
+        if (errs.length) { throw new Error(errs.join(" ")); }
         var result = await this.api.request("/channels", {
             method: "POST",
             body: channel,
             idempotencyKey: "create-" + channel.slug
         });
-
         this.lastChannelId = result.channelId;
         this.lastVersion = result.version || 1;
         return result;
     };
 
     ChannelManager.prototype.saveChannel = async function (channel) {
-        var errors = validateChannel(channel);
-        if (errors.length) { throw new Error(errors.join(" ")); }
-        if (!this.lastChannelId) { throw new Error("Create or select a channel before save."); }
-
+        var errs = validateChannel(channel);
+        if (errs.length) { throw new Error(errs.join(" ")); }
+        if (!this.lastChannelId) { throw new Error("Create/select channel first."); }
         var result = await this.api.request("/channels/" + this.lastChannelId, {
             method: "PUT",
+            headers: { "If-Match": String(this.lastVersion) },
             body: Object.assign({}, channel, { version: this.lastVersion }),
-            headers: { "If-Match": String(this.lastVersion || 1) },
-            idempotencyKey: "save-" + this.lastChannelId + "-" + (this.lastVersion || 1)
+            idempotencyKey: "save-" + this.lastChannelId + "-" + this.lastVersion
         });
-
         this.lastVersion = result.version || this.lastVersion;
         return result;
     };
 
     ChannelManager.prototype.cloneChannel = async function () {
-        if (!this.lastChannelId) { throw new Error("Select a channel first."); }
-        var result = await this.api.request("/channels/" + this.lastChannelId + "/clone", {
-            method: "POST",
-            idempotencyKey: "clone-" + this.lastChannelId + "-" + Date.now()
-        });
-        return result;
+        if (!this.lastChannelId) { throw new Error("Select channel first."); }
+        return await this.api.request("/channels/" + this.lastChannelId + "/clone", { method: "POST", idempotencyKey: "clone-" + this.lastChannelId + "-" + Date.now() });
     };
 
     ChannelManager.prototype.archiveChannel = async function () {
-        if (!this.lastChannelId) { throw new Error("Select a channel first."); }
-        return await this.api.request("/channels/" + this.lastChannelId + "/archive", {
-            method: "POST",
-            idempotencyKey: "archive-" + this.lastChannelId + "-" + Date.now()
-        });
+        if (!this.lastChannelId) { throw new Error("Select channel first."); }
+        return await this.api.request("/channels/" + this.lastChannelId + "/archive", { method: "POST", idempotencyKey: "archive-" + this.lastChannelId + "-" + Date.now() });
     };
 
     function readChannelForm() {
@@ -242,30 +302,24 @@
             language: byId("language").value,
             liveMode: byId("liveMode").value,
             primaryOutput: byId("primaryOutput").value,
-            backupStudio: byId("backupStudio").value
+            backupStudio: byId("backupStudio").value,
+            externalSources: byId("externalSources").value
         };
     }
 
-    function writeChannelForm(channel) {
-        byId("channelName").value = channel.name || "";
-        byId("channelSlug").value = channel.slug || "";
-        byId("channelMode").value = channel.mode || "public";
-        byId("outputProfile").value = channel.outputProfile || "HD";
-        byId("timezone").value = channel.timezone || "UTC";
-        byId("brandingTheme").value = channel.brandingTheme || "Classic Cable";
-        byId("language").value = channel.language || "en-US";
-    }
-
-    function setResult(msg, isError) {
-        var el = byId("channelResult");
-        if (!el) { return; }
-        el.style.color = isError ? "#b30000" : "#084400";
-        el.textContent = msg;
+    function writeChannelForm(c) {
+        byId("channelName").value = c.name || "";
+        byId("channelSlug").value = c.slug || "";
+        byId("channelMode").value = c.mode || "public";
+        byId("outputProfile").value = c.outputProfile || "HD";
+        byId("timezone").value = c.timezone || "UTC";
+        byId("brandingTheme").value = c.brandingTheme || "Classic Cable";
+        byId("language").value = c.language || "en-US";
     }
 
     function saveDraft(channel) {
         localStorage.setItem(DRAFT_KEY, JSON.stringify(channel));
-        logEvent("Local draft saved.");
+        logEvent("Channel draft saved locally.");
     }
 
     function loadDraft() {
@@ -274,56 +328,26 @@
         try { return JSON.parse(raw); } catch (error) { return null; }
     }
 
-    function bindUploadArea() {
-        var drop = byId("dropArea");
-        var input = byId("mediaInput");
-        if (!drop || !input) { return; }
-
-        drop.addEventListener("dragover", function (ev) { ev.preventDefault(); drop.className = "drop-area drag"; });
-        drop.addEventListener("dragleave", function () { drop.className = "drop-area"; });
-        drop.addEventListener("drop", function (ev) {
-            ev.preventDefault();
-            drop.className = "drop-area";
-            input.files = ev.dataTransfer.files;
-            logUpload("Dropped " + input.files.length + " files.");
-        });
-    }
-
-    async function simulateResumableUpload(files) {
-        if (!files.length) {
-            logUpload("No files selected.");
-            return;
-        }
-
-        for (var i = 0; i < files.length; i += 1) {
-            var file = files[i];
-            logUpload("Queueing " + file.name + " (" + file.size + " bytes)");
-            await wait(200);
-            logUpload("Uploaded " + file.name + " with resume-token " + randomId());
-        }
-    }
-
-    function fillChannelSelect(channels, channelManager) {
+    function fillChannelSelect(channels, manager) {
         var select = byId("channelSelect");
         select.innerHTML = "";
-
-        channels.forEach(function (channel) {
-            var option = document.createElement("option");
-            option.value = channel.channelId;
-            option.text = channel.name + " (" + channel.channelId + ")";
-            option.dataset.version = channel.version || 1;
-            option.dataset.slug = channel.slug || "";
-            option.dataset.mode = channel.mode || "public";
-            option.dataset.output = channel.outputProfile || "HD";
-            option.dataset.timezone = channel.timezone || "UTC";
-            select.appendChild(option);
+        channels.forEach(function (ch) {
+            var opt = document.createElement("option");
+            opt.value = ch.channelId;
+            opt.text = ch.name + " (" + ch.channelId + ")";
+            opt.dataset.version = ch.version || 1;
+            opt.dataset.slug = ch.slug || "";
+            opt.dataset.mode = ch.mode || "public";
+            opt.dataset.output = ch.outputProfile || "HD";
+            opt.dataset.timezone = ch.timezone || "UTC";
+            select.appendChild(opt);
         });
 
         select.onchange = function () {
             var picked = select.options[select.selectedIndex];
             if (!picked) { return; }
-            channelManager.lastChannelId = picked.value;
-            channelManager.lastVersion = Number(picked.dataset.version || 1);
+            manager.lastChannelId = picked.value;
+            manager.lastVersion = Number(picked.dataset.version || 1);
             writeChannelForm({
                 name: picked.text.replace(/\s*\(.+\)$/, ""),
                 slug: picked.dataset.slug,
@@ -331,67 +355,116 @@
                 outputProfile: picked.dataset.output,
                 timezone: picked.dataset.timezone
             });
-            logEvent("Channel selected: " + channelManager.lastChannelId);
+            logEvent("Selected channel " + manager.lastChannelId);
         };
     }
 
-    var apiClient = new ApiClient(API_BASE);
-    var channelManager = new ChannelManager(apiClient);
-    var socketManager = new SocketManager(SOCKET_URL);
+    function bindUploadArea() {
+        var drop = byId("dropArea");
+        var input = byId("mediaInput");
+        if (!drop || !input) { return; }
+        drop.addEventListener("dragover", function (ev) { ev.preventDefault(); drop.className = "drop-area drag"; });
+        drop.addEventListener("dragleave", function () { drop.className = "drop-area"; });
+        drop.addEventListener("drop", function (ev) {
+            ev.preventDefault();
+            drop.className = "drop-area";
+            var list = ev.dataTransfer.files;
+            logUpload("Dropped " + list.length + " file(s).");
+        });
+    }
 
-    socketManager.connect();
-    socketManager.subscribe("channel-status");
-    socketManager.subscribe("playout-events");
-    socketManager.subscribe("alerts");
+    async function simulateResumableUpload(files) {
+        if (!files || !files.length) { logUpload("No files selected."); return; }
+        for (var i = 0; i < files.length; i += 1) {
+            var file = files[i];
+            var chunks = Math.max(1, Math.ceil(file.size / (1024 * 1024 * 5)));
+            logUpload("Start upload " + file.name + " in " + chunks + " chunk(s).");
+            for (var c = 1; c <= chunks; c += 1) {
+                await wait(120);
+                logUpload("Chunk " + c + "/" + chunks + " uploaded for " + file.name);
+            }
+            logUpload("Completed upload " + file.name + " (token " + randomId() + ")");
+        }
+    }
+
+    var api = new ApiClient(API_BASE);
+    var auth = new AuthManager(api);
+    var channels = new ChannelManager(api);
+    var sockets = new SocketManager(SOCKET_URL, auth);
+
+    auth.loadSession();
+    sockets.connect();
+    sockets.subscribe("channel-status");
+    sockets.subscribe("playout-events");
+    sockets.subscribe("alerts");
+    sockets.subscribe("audience-events");
 
     bindUploadArea();
 
     var draft = loadDraft();
-    if (draft) {
-        writeChannelForm(draft);
-        logEvent("Loaded local draft.");
-    }
+    if (draft) { writeChannelForm(draft); logEvent("Loaded channel draft."); }
+
+    byId("btnSignIn").addEventListener("click", async function () {
+        try {
+            var session = await auth.signIn(byId("loginEmail").value, byId("loginPassword").value, byId("rememberMe").checked);
+            setResult("authResult", "Signed in as " + session.email, false);
+            sockets.reconnectNow();
+        } catch (error) {
+            setResult("authResult", error.message, true);
+        }
+    });
+
+    byId("btnCreateAccount").addEventListener("click", async function () {
+        try {
+            await auth.createAccount(byId("loginEmail").value, byId("loginPassword").value);
+            setResult("authResult", "Account created. Sign in to continue.", false);
+        } catch (error) {
+            setResult("authResult", error.message, true);
+        }
+    });
+
+    byId("btnSignOut").addEventListener("click", function () {
+        auth.signOut();
+        setResult("authResult", "Signed out.", false);
+        sockets.reconnectNow();
+    });
+
+    byId("btnLoadChannels").addEventListener("click", async function () {
+        try {
+            var list = await channels.listChannels();
+            fillChannelSelect(list, channels);
+            logEvent("Loaded " + list.length + " channels.");
+        } catch (error) {
+            logEvent("Load channels failed: " + error.message);
+        }
+    });
 
     byId("btnCreateChannel").addEventListener("click", async function () {
         try {
-            var channel = readChannelForm();
-            saveDraft(channel);
-            var result = await channelManager.createChannel(channel);
-            setResult("Channel created: " + result.channelId, false);
-            logEvent("Channel created: " + result.channelId);
+            var data = readChannelForm();
+            saveDraft(data);
+            var result = await channels.createChannel(data);
+            setResult("channelResult", "Channel created: " + result.channelId, false);
         } catch (error) {
-            setResult(error.message, true);
-            logEvent("Create failed: " + error.message);
+            setResult("channelResult", error.message, true);
         }
     });
 
     byId("btnSaveChannel").addEventListener("click", async function () {
         try {
-            var channel = readChannelForm();
-            saveDraft(channel);
-            var result = await channelManager.saveChannel(channel);
-            setResult("Channel saved at version " + result.version, false);
-            logEvent("Channel saved, version " + result.version);
+            var data = readChannelForm();
+            saveDraft(data);
+            var result = await channels.saveChannel(data);
+            setResult("channelResult", "Channel saved. Version " + result.version, false);
         } catch (error) {
-            setResult(error.message, true);
-            logEvent("Save failed: " + error.message);
-        }
-    });
-
-    byId("btnLoadChannels").addEventListener("click", async function () {
-        try {
-            var channels = await channelManager.listChannels();
-            fillChannelSelect(channels, channelManager);
-            logEvent("Loaded " + channels.length + " channels.");
-        } catch (error) {
-            logEvent("Channel list failed: " + error.message);
+            setResult("channelResult", error.message, true);
         }
     });
 
     byId("btnCloneChannel").addEventListener("click", async function () {
         try {
-            var result = await channelManager.cloneChannel();
-            logEvent("Cloned channel to " + result.channelId);
+            var result = await channels.cloneChannel();
+            logEvent("Cloned channel to " + (result.channelId || "new channel"));
         } catch (error) {
             logEvent("Clone failed: " + error.message);
         }
@@ -399,7 +472,7 @@
 
     byId("btnArchiveChannel").addEventListener("click", async function () {
         try {
-            await channelManager.archiveChannel();
+            await channels.archiveChannel();
             logEvent("Channel archived.");
         } catch (error) {
             logEvent("Archive failed: " + error.message);
@@ -408,12 +481,12 @@
 
     byId("btnDraftChannel").addEventListener("click", function () {
         saveDraft(readChannelForm());
-        setResult("Local draft saved.", false);
+        setResult("channelResult", "Draft saved locally.", false);
     });
 
     byId("btnReconnect").addEventListener("click", function () {
-        socketManager.reconnectNow();
-        logEvent("Manual socket reconnect requested.");
+        sockets.reconnectNow();
+        logEvent("Manual reconnect requested.");
     });
 
     byId("btnUploadMedia").addEventListener("click", async function () {

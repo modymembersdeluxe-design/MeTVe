@@ -1,98 +1,53 @@
-# MeTVe Channel Reliability API Contract
+# MeTVe API & Socket Contract (Accounts + Channels + Reliability)
 
-This contract is designed for stable channel create/save lifecycle, resilient sockets, and web-based operator workflows.
+## Authentication
 
-## 1) Channels API
+### Sign up
+- `POST /api/auth/signup`
+- Body: `{ "email": "user@metve.tv", "password": "secret" }`
+- Returns: `{ "userId": "usr_123", "email": "user@metve.tv" }`
+
+### Sign in
+- `POST /api/auth/signin`
+- Body: `{ "email": "user@metve.tv", "password": "secret" }`
+- Returns: `{ "token": "jwt_or_session", "userId": "usr_123", "email": "user@metve.tv" }`
+
+## Channels
 
 ### Create channel
-
-`POST /api/channels`
-
-Headers:
-- `X-Request-Id`: unique per request
-- `X-Idempotency-Key`: deterministic key (`create-{slug}`)
-
-Body:
-
-```json
-{
-  "name": "Retro Movies",
-  "slug": "retro-movies",
-  "mode": "public",
-  "outputProfile": "HD",
-  "timezone": "UTC",
-  "brandingTheme": "Classic Cable",
-  "language": "en-US"
-}
-```
-
-Response `201`:
-
-```json
-{
-  "channelId": "chn_8f8b2",
-  "version": 1,
-  "status": "created"
-}
-```
+- `POST /api/channels`
+- Headers: `Authorization`, `X-Request-Id`, `X-Idempotency-Key`
+- Returns: `{ "channelId": "chn_001", "version": 1, "status": "created" }`
 
 ### Save channel
+- `PUT /api/channels/{channelId}`
+- Headers: `Authorization`, `X-Request-Id`, `X-Idempotency-Key`, `If-Match: <version>`
+- Returns: `{ "channelId": "chn_001", "version": 2, "status": "saved" }`
 
-`PUT /api/channels/{channelId}`
+### List/clone/archive
+- `GET /api/channels`
+- `POST /api/channels/{channelId}/clone`
+- `POST /api/channels/{channelId}/archive`
 
-Headers:
-- `X-Request-Id`
-- `X-Idempotency-Key`
-- `If-Match: <version>`
+## Media uploads
 
-Body includes schedule/settings and previous version.
+### Resumable upload
+- `POST /api/media/uploads` -> `{ "uploadId": "upl_1", "chunkSize": 5242880, "resumeToken": "..." }`
+- `PUT /api/media/uploads/{uploadId}/chunks/{index}`
+- `POST /api/media/uploads/{uploadId}/complete`
 
-Response `200`:
+Media types: video, audio, image, GIF. Suggested categories: shows, movies, commercials, bumpers, songs, idents, promos.
 
-```json
-{
-  "channelId": "chn_8f8b2",
-  "version": 2,
-  "status": "saved"
-}
-```
+## Socket
 
-### List/clone/archive channel
+- Endpoint: `wss://<host>/socket?token=<authToken>`
+- Subscriptions: `channel-status`, `playout-events`, `alerts`, `audience-events`
+- Heartbeat: server `ping`, client `{"type":"pong","ts":<ms>}`
 
-- `GET /api/channels` for channel grid/list refresh.
-- `POST /api/channels/{channelId}/clone` to duplicate branding/schedule profiles.
-- `POST /api/channels/{channelId}/archive` to move channel to archive state.
+## Reliability requirements
 
-## 2) Media API
-
-### Resumable upload session
-
-- `POST /api/media/uploads` returns `uploadId`, chunk size, resume token.
-- `PUT /api/media/uploads/{uploadId}/chunks/{index}` uploads chunks with retry.
-- `POST /api/media/uploads/{uploadId}/complete` finalizes and triggers transcode.
-
-Returned media payload should include detected format, duration, resolution, and catalog category.
-
-## 3) Sockets
-
-Endpoint: `wss://<host>/socket`
-
-Supported messages:
-
-```json
-{"type":"subscribe","topic":"channel-status"}
-{"type":"channel-status","channelId":"chn_8f8b2","state":"on-air"}
-{"type":"alert","level":"warning","text":"Primary source unavailable, switched to backup"}
-```
-
-Heartbeat:
-- server emits `ping`
-- client responds with `{"type":"pong","ts":1710000000}`
-
-## 4) Reliability checklist
-
-- API timeout budget: 12s with retry/backoff for 429/5xx/network failures.
-- Persist local channel draft in browser storage before create/save.
-- Exponential socket reconnect + auto-resubscribe.
-- Return structured error bodies with correlation ids.
-- Enforce optimistic concurrency with version checks to prevent channel corruption.
+- 12s timeout + exponential retry/backoff for HTTP 429/5xx/network failures.
+- Idempotency keys for create/save/clone/archive.
+- Optimistic concurrency (`If-Match` + version) for channel save.
+- Automatic socket reconnect + manual reconnect button.
+- Validate channel payload before save to prevent corruption.
