@@ -1,8 +1,9 @@
 (function () {
     var API_BASE = "/api";
     var SOCKET_URL = "wss://example.invalid/metve";
-    var DRAFT_KEY = "metve_channel_draft_v3";
+    var DRAFT_KEY = "metve_channel_draft_v4";
     var AUTH_KEY = "metve_auth_session_v1";
+    var LIBRARY_KEY = "metve_library_store_v1";
 
     function byId(id) { return document.getElementById(id); }
     function wait(ms) { return new Promise(function (resolve) { setTimeout(resolve, ms); }); }
@@ -12,9 +13,10 @@
         var el = byId(id);
         if (el) { el.textContent = new Date().toISOString() + " | " + message + "\n" + el.textContent; }
     }
-
     function logEvent(msg) { logTo("eventLog", msg); }
     function logUpload(msg) { logTo("uploadLog", msg); }
+    function logSearch(msg) { logTo("searchLog", msg); }
+    function logAlert(msg) { logTo("alertLog", msg); }
 
     function setConnectionState(ok, text) {
         var el = byId("connState");
@@ -36,10 +38,7 @@
         this.maxRetries = 4;
         this.authToken = null;
     }
-
-    ApiClient.prototype.setAuthToken = function (token) {
-        this.authToken = token || null;
-    };
+    ApiClient.prototype.setAuthToken = function (token) { this.authToken = token || null; };
 
     ApiClient.prototype.request = async function (path, options) {
         var opts = options || {};
@@ -54,9 +53,7 @@
                 "X-Request-Id": randomId(),
                 "X-Idempotency-Key": opts.idempotencyKey || randomId()
             }, opts.headers || {});
-            if (this.authToken) {
-                headers.Authorization = "Bearer " + this.authToken;
-            }
+            if (this.authToken) { headers.Authorization = "Bearer " + this.authToken; }
 
             try {
                 var response = await fetch(this.baseUrl + path, {
@@ -99,7 +96,6 @@
         this.api = api;
         this.session = null;
     }
-
     AuthManager.prototype.loadSession = function () {
         var raw = localStorage.getItem(AUTH_KEY);
         if (!raw) { return; }
@@ -112,10 +108,8 @@
             localStorage.removeItem(AUTH_KEY);
         }
     };
-
     AuthManager.prototype.signIn = async function (email, password, remember) {
-        if (!email || !password) { throw new Error("Email and password are required."); }
-
+        if (!email || !password) { throw new Error("Email and password required."); }
         var result;
         try {
             result = await this.api.request("/auth/signin", {
@@ -124,32 +118,27 @@
                 idempotencyKey: "signin-" + email
             });
         } catch (error) {
-            result = { token: "demo-token", userId: "demo-user", email: email };
-            logEvent("Using local demo session because backend auth is unavailable.");
+            result = { token: "demo-token", userId: "demo", email: email };
+            logEvent("Auth endpoint unavailable; demo session activated.");
         }
-
-        this.session = { token: result.token, email: result.email || email, userId: result.userId || "user" };
+        this.session = { token: result.token, email: result.email, userId: result.userId };
         this.api.setAuthToken(this.session.token);
         byId("authState").textContent = "Signed in: " + this.session.email;
         if (remember) { localStorage.setItem(AUTH_KEY, JSON.stringify(this.session)); }
         return this.session;
     };
-
     AuthManager.prototype.createAccount = async function (email, password) {
-        if (!email || !password) { throw new Error("Email and password are required."); }
+        if (!email || !password) { throw new Error("Email and password required."); }
         try {
             await this.api.request("/auth/signup", {
                 method: "POST",
                 body: { email: email, password: password },
                 idempotencyKey: "signup-" + email
             });
-            return true;
         } catch (error) {
-            logEvent("Signup endpoint unavailable; simulated local account creation.");
-            return true;
+            logEvent("Signup endpoint unavailable; local create simulated.");
         }
     };
-
     AuthManager.prototype.signOut = function () {
         this.session = null;
         this.api.setAuthToken(null);
@@ -161,24 +150,21 @@
         this.url = url;
         this.authManager = authManager;
         this.socket = null;
+        this.connecting = false;
         this.reconnectAttempt = 0;
         this.maxReconnectDelay = 30000;
         this.subscriptions = {};
-        this.connecting = false;
     }
-
     SocketManager.prototype.connect = function () {
         if (this.connecting) { return; }
         this.connecting = true;
-
         var token = this.authManager.session ? this.authManager.session.token : "guest";
-        var wsUrl = this.url + "?token=" + encodeURIComponent(token);
         var self = this;
         try {
-            this.socket = new WebSocket(wsUrl);
+            this.socket = new WebSocket(this.url + "?token=" + encodeURIComponent(token));
         } catch (error) {
             this.connecting = false;
-            this.scheduleReconnect("socket constructor failed");
+            this.scheduleReconnect("constructor failure");
             return;
         }
 
@@ -190,47 +176,66 @@
             logEvent("Socket connected.");
         };
         this.socket.onmessage = function (ev) {
-            if (ev.data === "ping") { self.send({ type: "pong", ts: Date.now() }); return; }
-            logEvent("Socket: " + ev.data);
+            if (ev.data === "ping") {
+                self.send({ type: "pong", ts: Date.now() });
+                return;
+            }
+            logEvent("Socket event: " + ev.data);
         };
         this.socket.onerror = function () { logEvent("Socket error."); };
         this.socket.onclose = function () {
             self.connecting = false;
             setConnectionState(false, "Reconnecting");
-            self.scheduleReconnect("socket closed");
+            self.scheduleReconnect("socket close");
         };
     };
-
     SocketManager.prototype.scheduleReconnect = function (reason) {
         this.reconnectAttempt += 1;
         var delay = Math.min(1000 * Math.pow(2, this.reconnectAttempt), this.maxReconnectDelay);
-        logEvent("Reconnect in " + delay + "ms: " + reason);
+        logEvent("Reconnect in " + delay + "ms due to " + reason);
         var self = this;
         setTimeout(function () { self.connect(); }, delay);
     };
-
     SocketManager.prototype.reconnectNow = function () {
-        if (this.socket) {
-            try { this.socket.close(); } catch (error) { }
-        }
-        this.reconnectAttempt = 0;
+        if (this.socket) { try { this.socket.close(); } catch (error) { } }
         this.connecting = false;
+        this.reconnectAttempt = 0;
         this.connect();
     };
-
     SocketManager.prototype.subscribe = function (topic) {
         this.subscriptions[topic] = true;
         this.send({ type: "subscribe", topic: topic });
     };
-
     SocketManager.prototype.resubscribeAll = function () {
         var self = this;
         Object.keys(this.subscriptions).forEach(function (topic) { self.send({ type: "subscribe", topic: topic }); });
     };
-
     SocketManager.prototype.send = function (payload) {
         if (!this.socket || this.socket.readyState !== WebSocket.OPEN) { return; }
         this.socket.send(JSON.stringify(payload));
+    };
+
+    function LibraryStore() {
+        var raw = localStorage.getItem(LIBRARY_KEY);
+        this.data = raw ? JSON.parse(raw) : {
+            shows: [], movies: [], commercials: [], bumpers: [], songs: [], idents: [], promos: [], graphics: []
+        };
+    }
+    LibraryStore.prototype.save = function () { localStorage.setItem(LIBRARY_KEY, JSON.stringify(this.data)); };
+    LibraryStore.prototype.addItem = function (folder, item) {
+        if (!this.data[folder]) { this.data[folder] = []; }
+        this.data[folder].push(item);
+        this.save();
+    };
+    LibraryStore.prototype.search = function (term) {
+        var q = String(term || "").toLowerCase();
+        var results = [];
+        Object.keys(this.data).forEach(function (folder) {
+            (this.data[folder] || []).forEach(function (item) {
+                if ((item.name || "").toLowerCase().indexOf(q) !== -1) { results.push(folder + ": " + item.name); }
+            });
+        }, this);
+        return results;
     };
 
     function validateChannel(channel) {
@@ -248,12 +253,10 @@
         this.lastChannelId = null;
         this.lastVersion = 1;
     }
-
     ChannelManager.prototype.listChannels = async function () {
         var data = await this.api.request("/channels", { method: "GET", idempotencyKey: "list-channels" });
         return data.channels || [];
     };
-
     ChannelManager.prototype.createChannel = async function (channel) {
         var errs = validateChannel(channel);
         if (errs.length) { throw new Error(errs.join(" ")); }
@@ -266,7 +269,6 @@
         this.lastVersion = result.version || 1;
         return result;
     };
-
     ChannelManager.prototype.saveChannel = async function (channel) {
         var errs = validateChannel(channel);
         if (errs.length) { throw new Error(errs.join(" ")); }
@@ -280,12 +282,10 @@
         this.lastVersion = result.version || this.lastVersion;
         return result;
     };
-
     ChannelManager.prototype.cloneChannel = async function () {
         if (!this.lastChannelId) { throw new Error("Select channel first."); }
         return await this.api.request("/channels/" + this.lastChannelId + "/clone", { method: "POST", idempotencyKey: "clone-" + this.lastChannelId + "-" + Date.now() });
     };
-
     ChannelManager.prototype.archiveChannel = async function () {
         if (!this.lastChannelId) { throw new Error("Select channel first."); }
         return await this.api.request("/channels/" + this.lastChannelId + "/archive", { method: "POST", idempotencyKey: "archive-" + this.lastChannelId + "-" + Date.now() });
@@ -301,9 +301,8 @@
             brandingTheme: byId("brandingTheme").value,
             language: byId("language").value,
             liveMode: byId("liveMode").value,
-            primaryOutput: byId("primaryOutput").value,
-            backupStudio: byId("backupStudio").value,
-            externalSources: byId("externalSources").value
+            externalSources: byId("externalSources").value,
+            tickerText: byId("tickerText").value
         };
     }
 
@@ -313,15 +312,12 @@
         byId("channelMode").value = c.mode || "public";
         byId("outputProfile").value = c.outputProfile || "HD";
         byId("timezone").value = c.timezone || "UTC";
-        byId("brandingTheme").value = c.brandingTheme || "Classic Cable";
+        byId("brandingTheme").value = c.brandingTheme || "Nostalgia VIP";
         byId("language").value = c.language || "en-US";
+        byId("tickerText").value = c.tickerText || "Welcome to MeTVe";
     }
 
-    function saveDraft(channel) {
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(channel));
-        logEvent("Channel draft saved locally.");
-    }
-
+    function saveDraft(channel) { localStorage.setItem(DRAFT_KEY, JSON.stringify(channel)); }
     function loadDraft() {
         var raw = localStorage.getItem(DRAFT_KEY);
         if (!raw) { return null; }
@@ -342,7 +338,6 @@
             opt.dataset.timezone = ch.timezone || "UTC";
             select.appendChild(opt);
         });
-
         select.onchange = function () {
             var picked = select.options[select.selectedIndex];
             if (!picked) { return; }
@@ -355,21 +350,19 @@
                 outputProfile: picked.dataset.output,
                 timezone: picked.dataset.timezone
             });
-            logEvent("Selected channel " + manager.lastChannelId);
+            byId("previewScreen").textContent = "Preview loaded for " + picked.text;
         };
     }
 
     function bindUploadArea() {
         var drop = byId("dropArea");
-        var input = byId("mediaInput");
-        if (!drop || !input) { return; }
+        if (!drop) { return; }
         drop.addEventListener("dragover", function (ev) { ev.preventDefault(); drop.className = "drop-area drag"; });
         drop.addEventListener("dragleave", function () { drop.className = "drop-area"; });
         drop.addEventListener("drop", function (ev) {
             ev.preventDefault();
             drop.className = "drop-area";
-            var list = ev.dataTransfer.files;
-            logUpload("Dropped " + list.length + " file(s).");
+            logUpload("Dropped " + ev.dataTransfer.files.length + " file(s).");
         });
     }
 
@@ -377,19 +370,20 @@
         if (!files || !files.length) { logUpload("No files selected."); return; }
         for (var i = 0; i < files.length; i += 1) {
             var file = files[i];
-            var chunks = Math.max(1, Math.ceil(file.size / (1024 * 1024 * 5)));
-            logUpload("Start upload " + file.name + " in " + chunks + " chunk(s).");
+            var chunks = Math.max(1, Math.ceil(file.size / (5 * 1024 * 1024)));
+            logUpload("Start upload " + file.name + " in " + chunks + " chunk(s)");
             for (var c = 1; c <= chunks; c += 1) {
                 await wait(120);
                 logUpload("Chunk " + c + "/" + chunks + " uploaded for " + file.name);
             }
-            logUpload("Completed upload " + file.name + " (token " + randomId() + ")");
+            logUpload("Completed upload " + file.name + " token " + randomId());
         }
     }
 
     var api = new ApiClient(API_BASE);
     var auth = new AuthManager(api);
     var channels = new ChannelManager(api);
+    var library = new LibraryStore();
     var sockets = new SocketManager(SOCKET_URL, auth);
 
     auth.loadSession();
@@ -402,7 +396,30 @@
     bindUploadArea();
 
     var draft = loadDraft();
-    if (draft) { writeChannelForm(draft); logEvent("Loaded channel draft."); }
+    if (draft) {
+        writeChannelForm(draft);
+        logEvent("Draft loaded.");
+    }
+
+    document.querySelectorAll(".folder-btn").forEach(function (button) {
+        button.addEventListener("click", function () {
+            var folder = button.getAttribute("data-folder");
+            var title = prompt("Add media item to " + folder + " folder:", "sample-" + folder + "-item");
+            if (!title) { return; }
+            library.addItem(folder, { name: title, createdAt: Date.now() });
+            logUpload("Added " + title + " to " + folder + " folder");
+        });
+    });
+
+    byId("btnLibrarySearch").addEventListener("click", function () {
+        var term = byId("librarySearch").value;
+        var results = library.search(term);
+        if (!results.length) {
+            logSearch("No result for: " + term);
+            return;
+        }
+        results.slice(0, 20).forEach(function (line) { logSearch(line); });
+    });
 
     byId("btnSignIn").addEventListener("click", async function () {
         try {
@@ -413,16 +430,14 @@
             setResult("authResult", error.message, true);
         }
     });
-
     byId("btnCreateAccount").addEventListener("click", async function () {
         try {
             await auth.createAccount(byId("loginEmail").value, byId("loginPassword").value);
-            setResult("authResult", "Account created. Sign in to continue.", false);
+            setResult("authResult", "Account created. Sign in now.", false);
         } catch (error) {
             setResult("authResult", error.message, true);
         }
     });
-
     byId("btnSignOut").addEventListener("click", function () {
         auth.signOut();
         setResult("authResult", "Signed out.", false);
@@ -438,18 +453,17 @@
             logEvent("Load channels failed: " + error.message);
         }
     });
-
     byId("btnCreateChannel").addEventListener("click", async function () {
         try {
             var data = readChannelForm();
             saveDraft(data);
             var result = await channels.createChannel(data);
             setResult("channelResult", "Channel created: " + result.channelId, false);
+            byId("previewScreen").textContent = "ON AIR: " + data.name + " | " + data.outputProfile + " | TZ " + data.timezone;
         } catch (error) {
             setResult("channelResult", error.message, true);
         }
     });
-
     byId("btnSaveChannel").addEventListener("click", async function () {
         try {
             var data = readChannelForm();
@@ -460,16 +474,14 @@
             setResult("channelResult", error.message, true);
         }
     });
-
     byId("btnCloneChannel").addEventListener("click", async function () {
         try {
             var result = await channels.cloneChannel();
-            logEvent("Cloned channel to " + (result.channelId || "new channel"));
+            logEvent("Cloned channel to " + (result.channelId || "new"));
         } catch (error) {
             logEvent("Clone failed: " + error.message);
         }
     });
-
     byId("btnArchiveChannel").addEventListener("click", async function () {
         try {
             await channels.archiveChannel();
@@ -483,13 +495,26 @@
         saveDraft(readChannelForm());
         setResult("channelResult", "Draft saved locally.", false);
     });
-
     byId("btnReconnect").addEventListener("click", function () {
         sockets.reconnectNow();
         logEvent("Manual reconnect requested.");
     });
-
     byId("btnUploadMedia").addEventListener("click", async function () {
         await simulateResumableUpload(byId("mediaInput").files || []);
+    });
+
+    byId("btnPublishProjectAd").addEventListener("click", function () {
+        var payload = {
+            project: byId("adProjectName").value,
+            link: byId("adProjectLink").value,
+            message: byId("adProjectMessage").value
+        };
+        setResult("adResult", "Project ad published: " + payload.project, false);
+        logEvent("Ad board update => " + payload.project + " | " + payload.link);
+    });
+
+    byId("btnSimulateAlert").addEventListener("click", function () {
+        logAlert("Smart alert: filler block inserted (free slot detected).");
+        logAlert("Smart alert: schedule clash between Movie Block A and Promo B.");
     });
 })();

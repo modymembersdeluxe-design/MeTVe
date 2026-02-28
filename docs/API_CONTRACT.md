@@ -1,53 +1,60 @@
-# MeTVe API & Socket Contract (Accounts + Channels + Reliability)
+# MeTVe API & Socket Contract (Accounts + Creator Studio + Library)
 
 ## Authentication
 
-### Sign up
 - `POST /api/auth/signup`
-- Body: `{ "email": "user@metve.tv", "password": "secret" }`
-- Returns: `{ "userId": "usr_123", "email": "user@metve.tv" }`
-
-### Sign in
 - `POST /api/auth/signin`
-- Body: `{ "email": "user@metve.tv", "password": "secret" }`
-- Returns: `{ "token": "jwt_or_session", "userId": "usr_123", "email": "user@metve.tv" }`
 
-## Channels
+Signin returns `{ token, userId, email }` and must support persistent user sessions for creator studio access.
 
-### Create channel
-- `POST /api/channels`
-- Headers: `Authorization`, `X-Request-Id`, `X-Idempotency-Key`
-- Returns: `{ "channelId": "chn_001", "version": 1, "status": "created" }`
+## Channel management
 
-### Save channel
-- `PUT /api/channels/{channelId}`
-- Headers: `Authorization`, `X-Request-Id`, `X-Idempotency-Key`, `If-Match: <version>`
-- Returns: `{ "channelId": "chn_001", "version": 2, "status": "saved" }`
-
-### List/clone/archive
 - `GET /api/channels`
+- `POST /api/channels`
+- `PUT /api/channels/{channelId}`
 - `POST /api/channels/{channelId}/clone`
 - `POST /api/channels/{channelId}/archive`
 
-## Media uploads
+Create/save requirements:
+- Required headers: `Authorization`, `X-Request-Id`, `X-Idempotency-Key`
+- Save also requires `If-Match` and versioned body for optimistic concurrency.
+- Timezone should be stored per broadcaster location.
 
-### Resumable upload
-- `POST /api/media/uploads` -> `{ "uploadId": "upl_1", "chunkSize": 5242880, "resumeToken": "..." }`
+## Library folders and assets
+
+Suggested endpoints:
+- `GET /api/library`
+- `POST /api/library/{folder}` (folders: shows, movies, commercials, bumpers, songs, idents, promos, graphics)
+- `GET /api/library/search?q=`
+
+Accepted media:
+- Video/audio/images/GIF
+- Multi-format video including MP4, MOV, AVI, MPEG-2, TS, MKV, WebM
+- External source references (YouTube, VidLii, Internet Archive, live stream URL)
+
+## Upload pipeline (resumable)
+
+- `POST /api/media/uploads` => `{ uploadId, chunkSize, resumeToken }`
 - `PUT /api/media/uploads/{uploadId}/chunks/{index}`
 - `POST /api/media/uploads/{uploadId}/complete`
 
-Media types: video, audio, image, GIF. Suggested categories: shows, movies, commercials, bumpers, songs, idents, promos.
+## Project advertising board
 
-## Socket
+Suggested endpoints:
+- `POST /api/projects/ads`
+- `GET /api/projects/ads`
+
+Payload sample: `{ project, link, message, channelId }`
+
+## Sockets
 
 - Endpoint: `wss://<host>/socket?token=<authToken>`
-- Subscriptions: `channel-status`, `playout-events`, `alerts`, `audience-events`
-- Heartbeat: server `ping`, client `{"type":"pong","ts":<ms>}`
+- Topics: `channel-status`, `playout-events`, `alerts`, `audience-events`
+- Heartbeat: server `ping` and client `{"type":"pong","ts":<ms>}`
 
 ## Reliability requirements
 
-- 12s timeout + exponential retry/backoff for HTTP 429/5xx/network failures.
-- Idempotency keys for create/save/clone/archive.
-- Optimistic concurrency (`If-Match` + version) for channel save.
-- Automatic socket reconnect + manual reconnect button.
-- Validate channel payload before save to prevent corruption.
+- Timeout budget 12s with retry/backoff for network/429/5xx failures.
+- Idempotency keys for mutating endpoints.
+- Automatic reconnect + manual reconnect trigger.
+- Validate channel payload before save and reject corrupt requests.

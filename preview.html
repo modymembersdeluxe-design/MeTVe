@@ -19,22 +19,7 @@
 
             <div class="layout-2col">
                 <div class="sidebar panel">
-                    <h3>Navigation</h3>
-                    <ul class="menu">
-                        <li>Home Dashboard</li>
-                        <li>User Accounts</li>
-                        <li>Channels</li>
-                        <li>Creator Studio</li>
-                        <li>Playout Engine</li>
-                        <li>Live Streaming</li>
-                        <li>Media Library</li>
-                        <li>Graphics/Overlay</li>
-                        <li>Interactive Audience</li>
-                        <li>Monetization</li>
-                        <li>Failover/Flover</li>
-                    </ul>
-
-                    <h3>Account Login / Sign In</h3>
+                    <h3>User Account</h3>
                     <table class="form-table compact">
                         <tr><td>Email</td><td><input id="loginEmail" type="text" placeholder="user@metve.tv" /></td></tr>
                         <tr><td>Password</td><td><input id="loginPassword" type="password" /></td></tr>
@@ -47,41 +32,55 @@
                     </div>
                     <div id="authResult" class="result"></div>
 
-                    <h3>Channels</h3>
-                    <select id="channelSelect" size="8" class="channel-list"></select>
+                    <h3>My Channels</h3>
+                    <select id="channelSelect" size="7" class="channel-list"></select>
                     <div class="actions stack">
                         <button type="button" id="btnLoadChannels">Refresh Channels</button>
                         <button type="button" id="btnCloneChannel">Clone Channel</button>
                         <button type="button" id="btnArchiveChannel">Archive Channel</button>
                     </div>
+
+                    <h3>Library Search</h3>
+                    <input id="librarySearch" type="text" placeholder="Search videos, songs, ads, idents..." />
+                    <div class="actions"><button type="button" id="btnLibrarySearch">Search</button></div>
+                    <pre id="searchLog" class="mini-log"></pre>
                 </div>
 
                 <div class="content">
-                    <div class="panel">
-                        <h2>Home & Creator Studio</h2>
-                        <ul>
-                            <li>Create/save/manage channels and operator profiles.</li>
-                            <li>Upload movies, shows, ads, songs, graphics, images, GIFs.</li>
-                            <li>Support scheduled playout, live assist, emergency override.</li>
-                            <li>Realtime audience interaction: chat, polls, overlays, alerts.</li>
-                        </ul>
+                    <div class="panel grid-2">
+                        <div>
+                            <h2>TV / Radio Preview</h2>
+                            <div class="preview-box">
+                                <div class="preview-head">Channel Output Preview (SD/HD/UHD)</div>
+                                <div class="preview-screen" id="previewScreen">No source loaded</div>
+                                <div class="preview-meta">Outputs: RTMP / HLS / NDI / SDI</div>
+                            </div>
+                        </div>
+                        <div>
+                            <h2>Channel Design & Time Zone</h2>
+                            <table class="form-table compact">
+                                <tr><td>Theme</td><td><input id="brandingTheme" type="text" value="Nostalgia VIP" /></td></tr>
+                                <tr><td>Language</td><td><input id="language" type="text" value="en-US" /></td></tr>
+                                <tr><td>Timezone</td><td><input id="timezone" type="text" value="UTC" /></td></tr>
+                                <tr><td>Ticker</td><td><input id="tickerText" type="text" value="Welcome to MeTVe" /></td></tr>
+                            </table>
+                        </div>
                     </div>
 
                     <div class="panel">
-                        <h2>Create / Save Channel (Stable API)</h2>
+                        <h2>Creator Studio: Create / Save Channel</h2>
                         <table class="form-table">
                             <tr><td>Channel Name</td><td><input id="channelName" type="text" maxlength="80" /></td></tr>
                             <tr><td>Slug</td><td><input id="channelSlug" type="text" maxlength="64" placeholder="my-channel" /></td></tr>
                             <tr><td>Mode</td><td><select id="channelMode"><option value="public">Public</option><option value="private">Private</option><option value="premium">Premium</option></select></td></tr>
                             <tr><td>Output Profile</td><td><select id="outputProfile"><option value="SD">SD</option><option value="HD">HD</option><option value="FHD">Full HD</option><option value="UHD">UHD</option></select></td></tr>
-                            <tr><td>Timezone</td><td><input id="timezone" type="text" value="UTC" /></td></tr>
-                            <tr><td>Theme</td><td><input id="brandingTheme" type="text" value="Classic Cable" /></td></tr>
-                            <tr><td>Language</td><td><input id="language" type="text" value="en-US" /></td></tr>
+                            <tr><td>Live Mode</td><td><select id="liveMode"><option>Auto</option><option>Live Assist</option><option>Emergency</option></select></td></tr>
+                            <tr><td>External Sources</td><td><input id="externalSources" value="YouTube, VidLii, Internet Archive" /></td></tr>
                         </table>
                         <div class="actions">
                             <button type="button" id="btnCreateChannel">Create Channel</button>
                             <button type="button" id="btnSaveChannel">Save Channel</button>
-                            <button type="button" id="btnDraftChannel">Save Draft Local</button>
+                            <button type="button" id="btnDraftChannel">Save Draft</button>
                             <button type="button" id="btnReconnect">Reconnect Socket</button>
                         </div>
                         <div id="channelResult" class="result"></div>
@@ -89,26 +88,50 @@
 
                     <div class="panel grid-2">
                         <div>
-                            <h2>Playout & Scheduling</h2>
-                            <table class="form-table compact">
-                                <tr><td>Live Mode</td><td><select id="liveMode"><option>Auto</option><option>Live Assist</option><option>Emergency</option></select></td></tr>
-                                <tr><td>Primary Output</td><td><input id="primaryOutput" value="RTMP + HLS + WebRTC" /></td></tr>
-                                <tr><td>Backup Studio</td><td><input id="backupStudio" value="Flover-A" /></td></tr>
-                                <tr><td>External Sources</td><td><input id="externalSources" value="YouTube, VidLii, Internet Archive" /></td></tr>
-                            </table>
-                        </div>
-                        <div>
-                            <h2>Media Upload</h2>
-                            <div class="drop-area" id="dropArea">Drop files: MP4/MOV/AVI/MPEG2/TS/MKV/WebM + audio/images/GIFs</div>
+                            <h2>Media Composer Library</h2>
+                            <div class="library-grid">
+                                <button type="button" class="folder-btn" data-folder="shows">Add Shows (Folder)</button>
+                                <button type="button" class="folder-btn" data-folder="movies">Add Movies (Folder)</button>
+                                <button type="button" class="folder-btn" data-folder="commercials">Add Commercials (Folder)</button>
+                                <button type="button" class="folder-btn" data-folder="bumpers">Add Bumpers (Multi)</button>
+                                <button type="button" class="folder-btn" data-folder="songs">Add Songs (Folder/Multi)</button>
+                                <button type="button" class="folder-btn" data-folder="idents">Add Idents (Multi)</button>
+                                <button type="button" class="folder-btn" data-folder="promos">Add Promos (Folder)</button>
+                                <button type="button" class="folder-btn" data-folder="graphics">Add Graphics/Images/GIFs</button>
+                            </div>
+                            <div class="drop-area" id="dropArea">Drop video/audio/images/GIF files here</div>
                             <input id="mediaInput" type="file" multiple />
                             <div class="actions"><button type="button" id="btnUploadMedia">Queue Upload</button></div>
                             <pre id="uploadLog" class="mini-log"></pre>
                         </div>
+                        <div>
+                            <h2>Scheduling + Alerts</h2>
+                            <ul>
+                                <li>Automated 24/7 playlists + video blocks + schedule fillers.</li>
+                                <li>Fixed start times for locked clips.</li>
+                                <li>On-air changes after publish.</li>
+                                <li>Smart alerts for clashes and free slots.</li>
+                            </ul>
+                            <div class="actions"><button type="button" id="btnSimulateAlert">Simulate Alert</button></div>
+                            <pre id="alertLog" class="mini-log"></pre>
+                        </div>
                     </div>
 
-                    <div class="panel">
-                        <h2>Realtime Events</h2>
-                        <pre id="eventLog" class="event-log"></pre>
+                    <div class="panel grid-2">
+                        <div>
+                            <h2>Advertise Your Project</h2>
+                            <table class="form-table compact">
+                                <tr><td>Project Name</td><td><input id="adProjectName" value="My Indie Show" /></td></tr>
+                                <tr><td>Link</td><td><input id="adProjectLink" value="https://example.org" /></td></tr>
+                                <tr><td>Message</td><td><input id="adProjectMessage" value="Now streaming on MeTVe" /></td></tr>
+                            </table>
+                            <div class="actions"><button type="button" id="btnPublishProjectAd">Publish Project Ad</button></div>
+                            <div id="adResult" class="result"></div>
+                        </div>
+                        <div>
+                            <h2>Realtime Events</h2>
+                            <pre id="eventLog" class="event-log"></pre>
+                        </div>
                     </div>
                 </div>
             </div>

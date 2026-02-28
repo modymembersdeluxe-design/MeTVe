@@ -1,25 +1,28 @@
-# MeTVe – Online Television (Web-based Virtual Interactive TV)
+# MeTVe – Online Television (Interactive Cable-Style Web Platform)
 
-This repository contains a classic ASPX/WebForms-era operator console foundation for MeTVe, focused on account access, channel creation, creator studio workflows, media ingest, and reliability for API/socket connectivity.
+MeTVe is a WebForms-era operator console starter that now includes account sign-in, creator studio channel controls, TV/radio preview layout, searchable media library folders, and project advertising panel features.
 
-## Included in this update
+## New feature highlights
 
-- User account area with sign in, sign out, and create-account flows.
-- Home + Creator Studio sections for channel operations.
-- Channel manager: create/save/list/clone/archive with validation.
-- Media ingest panel with drag-and-drop + resumable upload simulation.
-- Playout configuration controls (SD/HD/FHD/UHD, live assist, failover profile).
-- Reliability-first client runtime:
-  - request timeout/retries/backoff
-  - idempotency and correlation headers
-  - optimistic concurrency for saves
-  - socket auto-reconnect and manual reconnect
-  - local draft persistence
+- Interactive cable-style UI with TV/Radio preview screen.
+- User account actions: sign in, sign out, create account.
+- Creator Studio channel lifecycle: create/save/list/clone/archive.
+- Design controls: channel theme, language, ticker text, timezone by broadcaster location.
+- Media Composer library folders:
+  - Shows, Movies, Commercials, Bumpers, Songs, Idents, Promos, Graphics/Images/GIFs.
+- Library search for folder media entries.
+- Project advertising page section for creators to publish their own project promos.
+- Scheduling and alert panel (video blocks, fillers, fixed-time clips, clash/free-slot alerts).
+- Reliability-first runtime:
+  - API timeout + retry/backoff + idempotency
+  - optimistic concurrency for channel save
+  - socket reconnect/resubscribe + manual reconnect
+  - local draft persistence and resumable upload simulation
 
 ## Files
 
-- `Default.aspx` — primary ASPX operator console.
-- `preview.html` — HTML-renderable page used for local screenshot/testing rendering.
-- `Content/Site.css` — visual styling.
-- `Scripts/metve-app.js` — client runtime and feature logic.
-- `docs/API_CONTRACT.md` — recommended backend contract.
+- `Default.aspx` — main ASPX operator console.
+- `preview.html` — static render copy used for screenshot/testing.
+- `Content/Site.css` — dashboard styling.
+- `Scripts/metve-app.js` — frontend app runtime.
+- `docs/API_CONTRACT.md` — suggested backend contract.
