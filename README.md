@@ -25,6 +25,8 @@ MeTVe is a WebForms-style virtual interactive TV platform prototype with creator
   - drag/drop upload simulation with chunked progress
 - Project advertising area for creators.
 - Scheduling and smart alerts simulation (filler/free slot/clash examples).
+- Advanced legacy-era modules: OSD/lower thirds, SMS moderation, poll/winner workflows, IVR/call queue simulation, scene presets (chat/clip/ad), and emergency text override.
+- Broadcast compatibility placeholders: SDI/Composite, PAL/NTSC, safe-area guides, legacy 4:3 style controls.
 
 ## Files
 

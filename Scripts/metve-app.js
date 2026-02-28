@@ -18,6 +18,8 @@
     function logUpload(msg) { logTo("uploadLog", msg); }
     function logSearch(msg) { logTo("searchLog", msg); }
     function logAlert(msg) { logTo("alertLog", msg); }
+    function logControl(msg) { logTo("controlLog", msg); }
+    function logInteractive(msg) { logTo("interactiveLog", msg); }
 
     function setConnectionState(ok, text) {
         var el = byId("connState");
@@ -608,5 +610,52 @@
     byId("btnSimulateAlert").addEventListener("click", function () {
         logAlert("Smart alert: filler block inserted (free slot detected).");
         logAlert("Smart alert: schedule clash between Movie Block A and Promo B.");
+    });
+
+    byId("btnSceneChat").addEventListener("click", function () {
+        logControl("Preset loaded: CHAT MODE (multi-column panel, ticker + SMS). ");
+        byId("previewScreen").textContent = "LIVE CHAT MODE | Lower-third + ticker enabled";
+    });
+
+    byId("btnSceneClip").addEventListener("click", function () {
+        logControl("Preset loaded: CLIP MODE (logo BUG + transitions cut/fade).");
+        byId("previewScreen").textContent = "PLAYOUT CLIP MODE | Auto playlist + frame switch";
+    });
+
+    byId("btnSceneAd").addEventListener("click", function () {
+        logControl("Preset loaded: AD MODE (promo insertion + sponsor bugs).");
+        byId("previewScreen").textContent = "AD BREAK MODE | Pre/Mid-roll + sponsor panel";
+    });
+
+    byId("btnEmergencyText").addEventListener("click", function () {
+        logControl("Emergency override text published.");
+        logEvent("BREAKING: Emergency message pushed to on-screen overlay.");
+    });
+
+    byId("btnToggleSafeArea").addEventListener("click", function () {
+        logControl("CRT safe-area guide toggled (4:3 letterbox simulation).");
+    });
+
+    byId("btnModerateApprove").addEventListener("click", function () {
+        logInteractive("SMS moderation: APPROVED message from +9715****123.");
+    });
+
+    byId("btnModerateReject").addEventListener("click", function () {
+        logInteractive("SMS moderation: REJECTED spam keyword.");
+    });
+
+    byId("btnRunPoll").addEventListener("click", function () {
+        var total = Math.floor(Math.random() * 900 + 100);
+        var winner = ["A", "B", "C"][Math.floor(Math.random() * 3)];
+        logInteractive("Poll complete: " + total + " votes, winner option " + winner + ".");
+    });
+
+    byId("btnCallQueue").addEventListener("click", function () {
+        var waiting = Math.floor(Math.random() * 7 + 1);
+        logInteractive("Call queue updated: " + waiting + " callers waiting, IVR active.");
+    });
+
+    byId("btnGameScore").addEventListener("click", function () {
+        logInteractive("Game engine: Spin/Quiz scoreboard refreshed, top score " + Math.floor(Math.random() * 1000));
     });
 })();

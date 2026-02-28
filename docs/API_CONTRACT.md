@@ -66,3 +66,14 @@ Accepted media:
 - Allow client offline mode when socket URL is absent.
 - Validate channel payload before save and reject corruption.
 - Preserve create/save with local fallback storage when API is temporarily unavailable.
+
+
+## Interactive and telephony
+
+Suggested endpoints:
+- `POST /api/sms/moderation` (approve/reject)
+- `POST /api/polls/start` / `POST /api/polls/close`
+- `GET /api/polls/results`
+- `GET /api/calls/queue`
+
+Use websocket topics for `sms-events`, `poll-events`, and `call-events` to drive real-time OSD.
