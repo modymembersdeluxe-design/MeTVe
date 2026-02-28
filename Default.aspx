@@ -21,8 +21,19 @@
 
             <div class="legacy-nav">
                 <ul>
-                    <li>Home</li><li>Channels</li><li>Playout</li><li>Graphics</li><li>SMS/Chat</li><li>Quiz</li><li>Revenue</li><li>Settings</li>
+                    <li data-menu="home">Home</li><li data-menu="channels">Channels</li><li data-menu="creator">Creator Studio</li><li data-menu="playout">Playout</li><li data-menu="live">Live Stream</li><li data-menu="graphics">Graphics/CG</li><li data-menu="sms">SMS/Chat</li><li data-menu="quiz">Quiz/Games</li><li data-menu="ads">Ads/Revenue</li><li data-menu="library">Library</li><li data-menu="monitor">Monitoring</li><li data-menu="settings">Settings</li>
                 </ul>
+            </div>
+            <div class="legacy-subnav panel">
+                <strong>Quick Menu:</strong>
+                <span id="menuHint">Home dashboard loaded.</span>
+                <div class="subnav-links">
+                    <a href="#" id="menuNewChannel">+ New Channel</a>
+                    <a href="#" id="menuGoLive">▶ Go Live</a>
+                    <a href="#" id="menuUpload">⬆ Upload Media</a>
+                    <a href="#" id="menuPromo">★ Promote Channel</a>
+                    <a href="#" id="menuLogs">☰ Open Logs</a>
+                </div>
             </div>
 
             <div class="layout-2col">
@@ -54,6 +65,19 @@
                     <input id="librarySearch" type="text" placeholder="Search videos, songs, ads, idents..." />
                     <div class="actions"><button type="button" id="btnLibrarySearch">Search</button></div>
                     <pre id="searchLog" class="mini-log"></pre>
+
+                    <h3>MeTVe Menu Features</h3>
+                    <ul class="menu module-menu">
+                        <li>TV Playout Engine</li>
+                        <li>Live Stream Switch</li>
+                        <li>Media Composer</li>
+                        <li>Graphics & Branding</li>
+                        <li>SMS / Chat Moderation</li>
+                        <li>Quiz / Games</li>
+                        <li>Ads & Monetization</li>
+                        <li>Revenue Analytics</li>
+                        <li>Broadcast Monitoring</li>
+                    </ul>
                 </div>
 
                 <div class="content">

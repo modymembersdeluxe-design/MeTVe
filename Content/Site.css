@@ -64,3 +64,12 @@ body { margin: 0; font-family: Tahoma, Verdana, Arial, sans-serif; background: #
 .feature-columns { display: block; overflow: hidden; }
 .feature-columns ul { float: left; width: 47%; margin-right: 3%; }
 .feature-columns ul:last-child { margin-right: 0; }
+
+
+.legacy-subnav { margin: 0 12px 12px; padding: 8px 10px; background: #f3f0df; border: 1px solid #b8ae83; }
+.subnav-links { margin-top: 6px; }
+.subnav-links a { margin-right: 10px; color: #1f3f62; font-weight: bold; text-decoration: none; }
+.subnav-links a:hover { text-decoration: underline; }
+.module-menu { max-height: 220px; overflow: auto; background: #eef4fb; border: 1px solid #a8b8c8; padding: 8px 8px 8px 22px; }
+.module-menu li { margin-bottom: 4px; }
+.legacy-nav li.active { background: #3f6388; }

@@ -46,6 +46,39 @@
         el.innerHTML = msg;
     }
 
+
+    function setMenuHint(msg) {
+        var h = byId('menuHint');
+        if (h) { h.innerHTML = msg; }
+    }
+
+    function wireLegacyMenu() {
+        var items = document.querySelectorAll('.legacy-nav li');
+        for (var i = 0; i < items.length; i++) {
+            (function (li) {
+                li.onclick = function () {
+                    for (var j = 0; j < items.length; j++) { items[j].className = ''; }
+                    li.className = 'active';
+                    setMenuHint('Menu switched to: ' + li.innerHTML);
+                };
+            })(items[i]);
+        }
+
+        var links = ['menuNewChannel','menuGoLive','menuUpload','menuPromo','menuLogs'];
+        for (var k = 0; k < links.length; k++) {
+            var el = byId(links[k]);
+            if (el) {
+                el.onclick = function () { return false; };
+            }
+        }
+        if (byId('menuGoLive')) {
+            byId('menuGoLive').onclick = function () { byId('btnGoLiveFun').click(); return false; };
+        }
+        if (byId('menuPromo')) {
+            byId('menuPromo').onclick = function () { byId('btnPublishProjectAd').click(); return false; };
+        }
+    }
+
     byId('connState').innerHTML = 'API/Socket: Legacy Offline Mode';
 
     byId('btnSignIn').onclick = function () {
@@ -103,5 +136,7 @@
     byId('btnSceneClip').onclick = function () { log('controlLog', 'Legacy preset: CLIP.'); };
     byId('btnSceneAd').onclick = function () { log('controlLog', 'Legacy preset: AD.'); };
 
+    wireLegacyMenu();
+    setMenuHint('Home dashboard loaded.');
     refreshList();
 })();

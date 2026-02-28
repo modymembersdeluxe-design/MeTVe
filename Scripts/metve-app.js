@@ -26,6 +26,19 @@
     function logPlayback(msg) { logTo("playbackLog", msg); }
     function logSocial(msg) { logTo("socialLog", msg); }
 
+    function setMenuHint(text) {
+        var hint = byId("menuHint");
+        if (hint) { hint.textContent = text; }
+    }
+
+    function activateTopMenu(key) {
+        var items = document.querySelectorAll(".legacy-nav li");
+        for (var i = 0; i < items.length; i += 1) {
+            var li = items[i];
+            li.className = li.getAttribute("data-menu") === key ? "active" : "";
+        }
+    }
+
     function setConnectionState(ok, text) {
         var el = byId("connState");
         if (!el) { return; }
@@ -517,6 +530,10 @@
     bindUploadArea();
     wirePlaylistDnD();
 
+
+    activateTopMenu("home");
+    setMenuHint("Home dashboard loaded.");
+
     var draft = loadDraft();
     if (draft) {
         writeChannelForm(draft);
@@ -690,6 +707,49 @@
         logEvent("System certification log entry created.");
     });
 
+
+
+    document.querySelectorAll(".legacy-nav li").forEach(function (li) {
+        li.addEventListener("click", function () {
+            var key = li.getAttribute("data-menu");
+            activateTopMenu(key);
+            setMenuHint("Menu switched to: " + li.textContent + ".");
+            logEvent("Top menu selected: " + li.textContent);
+        });
+    });
+
+    byId("menuNewChannel").addEventListener("click", function (ev) {
+        ev.preventDefault();
+        activateTopMenu("channels");
+        setMenuHint("Quick Menu: new channel workflow opened.");
+        byId("channelName").focus();
+    });
+
+    byId("menuGoLive").addEventListener("click", function (ev) {
+        ev.preventDefault();
+        activateTopMenu("live");
+        byId("btnGoLiveFun").click();
+    });
+
+    byId("menuUpload").addEventListener("click", function (ev) {
+        ev.preventDefault();
+        activateTopMenu("library");
+        setMenuHint("Quick Menu: upload panel ready.");
+        byId("mediaInput").focus();
+    });
+
+    byId("menuPromo").addEventListener("click", function (ev) {
+        ev.preventDefault();
+        activateTopMenu("ads");
+        byId("btnPromoteChannel").click();
+    });
+
+    byId("menuLogs").addEventListener("click", function (ev) {
+        ev.preventDefault();
+        activateTopMenu("monitor");
+        setMenuHint("Quick Menu: monitoring logs active.");
+        logEvent("Logs panel focused from quick menu.");
+    });
 
     byId("btnGoLiveFun").addEventListener("click", function () {
         var name = byId("channelName").value || "My Channel";
