@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head runat="server">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="X-UA-Compatible" content="IE=9; IE=8; IE=7; IE=edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>MeTVe Online Television</title>
     <link href="Content/Site.css" rel="stylesheet" type="text/css" />
@@ -16,6 +16,13 @@
                     <span id="authState">Guest</span>
                     <span id="connState" class="status status-down">API/Socket: Disconnected</span>
                 </div>
+            </div>
+
+
+            <div class="legacy-nav">
+                <ul>
+                    <li>Home</li><li>Channels</li><li>Playout</li><li>Graphics</li><li>SMS/Chat</li><li>Quiz</li><li>Revenue</li><li>Settings</li>
+                </ul>
             </div>
 
             <div class="layout-2col">
@@ -32,6 +39,7 @@
                         <button type="button" id="btnSignOut">Sign Out</button>
                     </div>
                     <div id="authResult" class="result"></div>
+                    <div class="old-browser-note">Legacy Browser Mode: optimized for 2011-era desktop browsers (IE9+/old WebKit).</div>
 
                     <h3>My Channels</h3>
                     <select id="channelSelect" size="7" class="channel-list"></select>
@@ -250,6 +258,13 @@ Bitrate: --</pre>
             </div>
         </div>
     </form>
-    <script src="Scripts/metve-app.js" type="text/javascript"></script>
+    <script type="text/javascript">
+(function(){
+    var ua = navigator.userAgent || "";
+    var isLegacy = /MSIE\s(7|8|9|10)\./.test(ua) || /Trident\/(5|6)\./.test(ua);
+    var src = isLegacy ? "Scripts/metve-legacy.js" : "Scripts/metve-app.js";
+    document.write('<scr'+'ipt src="'+src+'" type="text/javascript"></scr'+'ipt>');
+})();
+</script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 # MeTVe – Online Television (Live Stream & Expanded Features Edition)
 
-MeTVe is a WebForms-style virtual interactive TV platform prototype with creator studio controls, live stream tooling, media library folders/search, project advertising, and hardened channel create/save behavior.
+MeTVe is a WebForms-style virtual interactive TV platform prototype with creator studio controls, live stream tooling, media library folders/search, project advertising, hardened channel create/save behavior, and 2011-era legacy browser mode support.
 
 ## Implemented highlights
 
@@ -36,5 +36,6 @@ MeTVe is a WebForms-style virtual interactive TV platform prototype with creator
 - `Default.aspx` — main ASPX operator UI.
 - `preview.html` — static render copy for screenshot/testing.
 - `Content/Site.css` — styling.
-- `Scripts/metve-app.js` — frontend runtime and reliability logic.
+- `Scripts/metve-app.js` — modern frontend runtime and reliability logic.
+- `Scripts/metve-legacy.js` — ES5 legacy runtime for older browsers (IE9+/old engines).
 - `docs/API_CONTRACT.md` — backend contract guidance.

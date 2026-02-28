@@ -89,3 +89,8 @@ Suggested endpoints:
 - `POST /api/quiz/round`
 
 Return payloads should include timeline updates, ad break slots, vote counters, and SMS campaign totals for operator dashboards.
+
+
+## Legacy browser behavior
+
+For 2011-era browser support mode, client can operate in local/offline channel workflow while preserving data in browser storage and syncing when backend APIs are reachable.
