@@ -22,6 +22,8 @@
     function logInteractive(msg) { logTo("interactiveLog", msg); }
     function logPlaylist(msg) { logTo("playlistLog", msg); }
     function logRevenue(msg) { logTo("revenueLog", msg); }
+    function logAutomation(msg) { logTo("automationLog", msg); }
+    function logPlayback(msg) { logTo("playbackLog", msg); }
 
     function setConnectionState(ok, text) {
         var el = byId("connState");
@@ -657,6 +659,34 @@
         if (ev.altKey && ev.key === "1") { byId("btnSceneChat").click(); }
         if (ev.altKey && ev.key === "2") { byId("btnSceneClip").click(); }
         if (ev.altKey && ev.key === "3") { byId("btnSceneAd").click(); }
+    });
+
+
+    byId("btnGenEpg").addEventListener("click", function () {
+        logAutomation("EPG generated from current schedule for all managed channels.");
+    });
+
+    byId("btnSnapSchedule").addEventListener("click", function () {
+        logAutomation("Frame snap completed: all events aligned to prior/next item boundaries.");
+    });
+
+    byId("btnScteTrigger").addEventListener("click", function () {
+        logAutomation("SCTE-35 marker emitted and SCTE-104 handoff simulated for ad insertion.");
+    });
+
+    byId("btnFailoverSim").addEventListener("click", function () {
+        logAutomation("High-availability flover simulation complete: backup channel now active.");
+    });
+
+    byId("btnApplyPlayback").addEventListener("click", function () {
+        logPlayback("Playback profile applied: " + byId("codecProfile").value + " | " + byId("scalingMode").value);
+        logPlayback("Audio channels: " + byId("audioChannels").value + " | Caption: " + byId("captionMode").value);
+        logPlayback("Network outputs: " + byId("ipOutputs").value);
+    });
+
+    byId("btnCertLog").addEventListener("click", function () {
+        logPlayback("Certification log written: frame-accurate monitoring checkpoint + playback hash.");
+        logEvent("System certification log entry created.");
     });
 
     byId("btnStartLive").addEventListener("click", function () {

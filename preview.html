@@ -217,6 +217,42 @@ Bitrate: --</pre>
                         </div>
                     </div>
 
+
+                    <div class="panel grid-2">
+                        <div>
+                            <h2>Broadcast Automation Pro (Extended)</h2>
+                            <ul>
+                                <li>Frame-accurate multi-channel scheduling with snap-to-next event.</li>
+                                <li>Automatic EPG generation from current on-air schedule.</li>
+                                <li>SCTE-35/SCTE-104 trigger simulation for ad breaks.</li>
+                                <li>Traffic ingest hooks for automatic content loading.</li>
+                                <li>High-availability flover and backup channel sync.</li>
+                            </ul>
+                            <div class="actions">
+                                <button type="button" id="btnGenEpg">Generate EPG</button>
+                                <button type="button" id="btnSnapSchedule">Snap Schedule</button>
+                                <button type="button" id="btnScteTrigger">Run SCTE Trigger</button>
+                                <button type="button" id="btnFailoverSim">Failover Sim</button>
+                            </div>
+                            <pre id="automationLog" class="mini-log"></pre>
+                        </div>
+                        <div>
+                            <h2>Playback / Audio / Caption / Network</h2>
+                            <table class="form-table compact">
+                                <tr><td>Codec Profile</td><td><input id="codecProfile" value="MPEG-2/H.264/H.265/MXF/MOV/TS" /></td></tr>
+                                <tr><td>Scaling</td><td><input id="scalingMode" value="Auto up/downscale + aspect correct" /></td></tr>
+                                <tr><td>Audio Channels</td><td><input id="audioChannels" value="16" /></td></tr>
+                                <tr><td>Caption Mode</td><td><input id="captionMode" value="Subtitles + Closed Caption" /></td></tr>
+                                <tr><td>IP Outputs</td><td><input id="ipOutputs" value="UDP, RTMP, SRT, NDI" /></td></tr>
+                            </table>
+                            <div class="actions">
+                                <button type="button" id="btnApplyPlayback">Apply Playback Profile</button>
+                                <button type="button" id="btnCertLog">Write Certification Log</button>
+                            </div>
+                            <pre id="playbackLog" class="mini-log"></pre>
+                        </div>
+                    </div>
+
                     <div class="panel">
                         <h2>Super Long Feature Matrix</h2>
                         <div class="feature-columns">

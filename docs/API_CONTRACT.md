@@ -94,3 +94,16 @@ Return payloads should include timeline updates, ad break slots, vote counters, 
 ## Legacy browser behavior
 
 For 2011-era browser support mode, client can operate in local/offline channel workflow while preserving data in browser storage and syncing when backend APIs are reachable.
+
+
+## Broadcast automation and certification
+
+Suggested endpoints:
+- `POST /api/schedule/snap` (frame-accurate event alignment)
+- `POST /api/epg/generate`
+- `POST /api/scte/trigger` (`scte104`/`scte35`)
+- `POST /api/failover/simulate`
+- `POST /api/playback/profile` (codec/scaling/aspect/audio/caption/ip-output)
+- `POST /api/logs/certification`
+
+Recommended payload should include channelId, start frame, duration frames, audio channel map, caption track map, and network output targets.
