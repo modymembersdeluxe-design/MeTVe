@@ -20,6 +20,8 @@
     function logAlert(msg) { logTo("alertLog", msg); }
     function logControl(msg) { logTo("controlLog", msg); }
     function logInteractive(msg) { logTo("interactiveLog", msg); }
+    function logPlaylist(msg) { logTo("playlistLog", msg); }
+    function logRevenue(msg) { logTo("revenueLog", msg); }
 
     function setConnectionState(ok, text) {
         var el = byId("connState");
@@ -464,6 +466,37 @@
         }
     }
 
+
+    function wirePlaylistDnD() {
+        var sourceList = byId("playlistLibrary");
+        var targetList = byId("playlistSchedule");
+        if (!sourceList || !targetList) { return; }
+
+        var dragText = "";
+        sourceList.querySelectorAll("li").forEach(function (li) {
+            li.addEventListener("dragstart", function () { dragText = li.textContent; });
+        });
+
+        targetList.addEventListener("dragover", function (ev) { ev.preventDefault(); });
+        targetList.addEventListener("drop", function (ev) {
+            ev.preventDefault();
+            if (!dragText) { return; }
+            var item = document.createElement("li");
+            item.textContent = dragText;
+            targetList.appendChild(item);
+            logPlaylist("Added to schedule: " + dragText);
+            dragText = "";
+        });
+    }
+
+    function updateRevenue(deltaSms, deltaAd, deltaVotes, deltaSubs) {
+        function val(id) { return Number((byId(id).textContent || "0").replace(/[^0-9.]/g, "")) || 0; }
+        byId("smsRevenue").textContent = "$" + (val("smsRevenue") + deltaSms).toFixed(2);
+        byId("adRevenue").textContent = "$" + (val("adRevenue") + deltaAd).toFixed(2);
+        byId("voteCount").textContent = String(Math.floor(val("voteCount") + deltaVotes));
+        byId("subCount").textContent = String(Math.floor(val("subCount") + deltaSubs));
+    }
+
     var api = new ApiClient(API_BASE);
     var auth = new AuthManager(api);
     var fallbackChannels = new LocalChannelStore();
@@ -479,6 +512,7 @@
     sockets.subscribe("audience-events");
 
     bindUploadArea();
+    wirePlaylistDnD();
 
     var draft = loadDraft();
     if (draft) {
@@ -588,6 +622,42 @@
         await simulateResumableUpload(byId("mediaInput").files || []);
     });
 
+
+
+    byId("btnAutoSchedule").addEventListener("click", function () {
+        logPlaylist("24/7 auto-schedule generated with daily/weekly blocks.");
+    });
+
+    byId("btnFillerInsert").addEventListener("click", function () {
+        logPlaylist("Filler inserted between fixed-time clips.");
+    });
+
+    byId("btnEmergencyOverride").addEventListener("click", function () {
+        logPlaylist("Emergency override activated: breaking news cut-in.");
+        byId("previewScreen").textContent = "EMERGENCY LIVE OVERRIDE ACTIVE";
+    });
+
+    byId("btnSimRevenue").addEventListener("click", function () {
+        var ds = Math.random() * 5 + 1;
+        var da = Math.random() * 15 + 3;
+        var dv = Math.floor(Math.random() * 60 + 15);
+        var dsub = Math.floor(Math.random() * 3);
+        updateRevenue(ds, da, dv, dsub);
+        logRevenue("Revenue tick: SMS +$" + ds.toFixed(2) + ", Ads +$" + da.toFixed(2));
+    });
+
+    byId("btnQuizRound").addEventListener("click", function () {
+        var winner = "User" + Math.floor(Math.random() * 900 + 100);
+        updateRevenue(2.5, 0, 30, 1);
+        logInteractive("Quiz round complete: winner " + winner + ", prize assigned.");
+        logRevenue("Premium SMS quiz entries processed.");
+    });
+
+    document.addEventListener("keydown", function (ev) {
+        if (ev.altKey && ev.key === "1") { byId("btnSceneChat").click(); }
+        if (ev.altKey && ev.key === "2") { byId("btnSceneClip").click(); }
+        if (ev.altKey && ev.key === "3") { byId("btnSceneAd").click(); }
+    });
 
     byId("btnStartLive").addEventListener("click", function () {
         var profile = byId("outputProfile").value;

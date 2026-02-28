@@ -142,6 +142,49 @@ Bitrate: --</pre>
 
 
 
+
+
+                    <div class="panel grid-2">
+                        <div>
+                            <h2>Playlist Editor (Drag & Drop)</h2>
+                            <div class="playlist-wrap">
+                                <div>
+                                    <h4>Library Clips</h4>
+                                    <ul id="playlistLibrary" class="drag-list">
+                                        <li draggable="true">Movie: Retro Action Intro</li>
+                                        <li draggable="true">Promo: Weekend Marathon</li>
+                                        <li draggable="true">Commercial: Sponsor A 30s</li>
+                                        <li draggable="true">Bumper: Coming Up Next</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4>On-Air Playlist</h4>
+                                    <ul id="playlistSchedule" class="drag-list drop-list"></ul>
+                                </div>
+                            </div>
+                            <div class="actions">
+                                <button type="button" id="btnAutoSchedule">Auto Schedule 24/7</button>
+                                <button type="button" id="btnFillerInsert">Insert Filler</button>
+                                <button type="button" id="btnEmergencyOverride">Emergency Override</button>
+                            </div>
+                            <pre id="playlistLog" class="mini-log"></pre>
+                        </div>
+                        <div>
+                            <h2>Revenue / Monetization Dashboard</h2>
+                            <table class="form-table compact">
+                                <tr><td>SMS Revenue</td><td><span id="smsRevenue">$0.00</span></td></tr>
+                                <tr><td>Ad Revenue</td><td><span id="adRevenue">$0.00</span></td></tr>
+                                <tr><td>Votes</td><td><span id="voteCount">0</span></td></tr>
+                                <tr><td>Premium Subs</td><td><span id="subCount">0</span></td></tr>
+                            </table>
+                            <div class="actions">
+                                <button type="button" id="btnSimRevenue">Simulate Revenue Tick</button>
+                                <button type="button" id="btnQuizRound">Run Quiz Round</button>
+                            </div>
+                            <pre id="revenueLog" class="mini-log"></pre>
+                        </div>
+                    </div>
+
                     <div class="panel grid-2">
                         <div>
                             <h2>Control Room Presets (2003-2010 Style)</h2>

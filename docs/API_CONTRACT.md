@@ -77,3 +77,15 @@ Suggested endpoints:
 - `GET /api/calls/queue`
 
 Use websocket topics for `sms-events`, `poll-events`, and `call-events` to drive real-time OSD.
+
+
+## Playlist / revenue / quiz
+
+Suggested endpoints:
+- `POST /api/playlists/auto-schedule`
+- `POST /api/playlists/filler`
+- `POST /api/playout/emergency-override`
+- `GET /api/revenue/dashboard`
+- `POST /api/quiz/round`
+
+Return payloads should include timeline updates, ad break slots, vote counters, and SMS campaign totals for operator dashboards.

@@ -39,3 +39,10 @@ body { margin: 0; font-family: Tahoma, Verdana, Arial, sans-serif; background: #
 .feature-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .feature-columns ul { margin: 0; padding-left: 20px; line-height: 1.5; }
 .feature-columns li { margin-bottom: 6px; }
+
+
+.playlist-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.drag-list { list-style: none; margin: 0; padding: 6px; min-height: 140px; background: #eef5fb; border: 1px solid #90a4b8; }
+.drag-list li { background: #fff; border: 1px solid #aab9c8; margin-bottom: 6px; padding: 5px; cursor: move; }
+.drop-list { background: #fef8e7; }
+.hotkey-note { font-size: 11px; color: #2f4e6f; }
