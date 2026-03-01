@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=9; IE=8; IE=7; IE=edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>MeTVe V2 - Online Television</title>
+    <link href="Content/Site.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+    <div class="page-wrap v2-aero v2-2012">
+        <div class="topbar">
+            <div class="logo">MeTVe V2</div>
+            <div class="top-meta"><span>2012 Legacy Glass Layout | Visual Studio 2013 ASP.NET</span></div>
+        </div>
+
+        <div class="legacy-nav">
+            <ul>
+                <li><a href="Default.aspx">Operator Console</a></li>
+                <li><a href="preview.html">Legacy Preview</a></li>
+                <li><a href="#v2home">Home</a></li>
+                <li><a href="#v2account">Account</a></li>
+                <li><a href="#v2channels">Channels</a></li>
+                <li><a href="#v2library">Library</a></li>
+                <li><a href="#v2guide">TV Guide</a></li>
+                <li><a href="#v2ads">Advertise</a></li>
+                <li><a href="#v2reliability">Reliability</a></li>
+                    <li><a href="#v2nostalgia">2012 FX</a></li>
+            </ul>
+        </div>
+
+        <div class="panel" id="v2home">
+            <h2>MeTVe – Online Television V2</h2>
+            <p>MeTVe V2 is a virtual interactive cable-style television platform where online users can create and manage professional channels, upload media, run live or scheduled playout, and engage viewers from a PC browser with cloud-like workflows.</p>
+            <ul class="v2-bullet-list">
+                <li>Create, save and manage channels with stable API + socket fallback behavior.</li>
+                <li>Upload and organize shows, movies, commercials, songs, promos, graphics, images and GIF media.</li>
+                <li>Run SD/HD/UHD playout with scheduling, fillers, and emergency override simulation.</li>
+                <li>Use creator studio controls for monetization, audience engagement, and operator actions across Slide TV, Video TV, Radio TV, VIP, Ringtone TV, Chat, Games, Other, and All channels.</li>
+            </ul>
+        </div>
+
+        <div class="panel grid-2" id="v2account">
+            <div>
+                <h3>Classic Account Login</h3>
+                <table class="form-table compact">
+                    <tr><td>Username</td><td><input id="v2LoginUser" value="" /></td></tr>
+                    <tr><td>Password</td><td><input id="v2LoginPass" type="password" value="" /></td></tr>
+                    <tr><td>Email (Sign Up)</td><td><input id="v2LoginEmail" value="" /></td></tr>
+                </table>
+                <div class="actions">
+                    <button type="button" id="btnV2SignIn">Sign In</button>
+                    <button type="button" id="btnV2SignUp">Create Account</button>
+                    <button type="button" id="btnV2SignOut">Sign Out</button>
+                </div>
+                <div id="v2AuthResult" class="result"></div>
+            </div>
+            <div>
+                <h3>Online User Status</h3>
+                <div class="v2-profile" id="v2ProfileCard">
+                    <p><strong>Status:</strong> <span id="v2AuthStatus">Guest</span></p>
+                    <p><strong>User:</strong> <span id="v2AuthUser">Not signed in</span></p>
+                    <p><strong>Mode:</strong> Classic 2011 Web Login</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel grid-2" id="v2channels">
+            <div>
+                <h3>Channels (Create / Save)</h3>
+                <table class="form-table compact">
+                    <tr><td>Name</td><td><input id="v2ChannelName" value="" /></td></tr>
+                    <tr><td>Description</td><td><input id="v2ChannelDesc" value="" /></td></tr>
+                    <tr><td>Format</td><td><select id="v2ChannelFormat"><option value="all">All</option><option value="video-tv">Video TV</option><option value="slide-tv">Slide TV</option><option value="radio-tv">Radio TV</option><option value="vip">VIP</option><option value="ringtone-tv">Ringtone TV</option><option value="chat">Chat</option><option value="games">Games</option><option value="other">Other</option></select></td></tr>
+                    <tr><td>Visibility</td><td><select id="v2ChannelVisibility"><option value="public">Public</option><option value="private">Private</option><option value="premium">Premium</option></select></td></tr>
+                </table>
+                <div class="actions"><button type="button" id="btnV2CreateChannel">Create / Save Channel</button></div>
+                <div id="v2Result" class="result"></div>
+            </div>
+            <div>
+                <h3>Featured Channels (<span id="v2Count">0</span>)</h3>
+                <input id="v2Search" type="text" placeholder="Search channels..." />
+                <div class="actions"><button type="button" id="btnV2Search">Search</button></div>
+                <div id="v2Channels" class="v2-grid"></div>
+            </div>
+        </div>
+
+        <div class="panel grid-2" id="v2library">
+            <div>
+                <h3>Creator Studio / Media Composer</h3>
+                <table class="form-table compact">
+                    <tr><td>Title</td><td><input id="v2ShowTitle" /></td></tr>
+                    <tr><td>Type</td><td><select id="v2ShowType"><option>Show</option><option>Movie</option><option>Commercial</option><option>Bumper</option><option>Song</option><option>Ident</option><option>Promo</option><option>Image/GIF</option><option>Live Stream URL</option></select></td></tr>
+                    <tr><td>Channel</td><td><input id="v2ShowChannel" /></td></tr>
+                </table>
+                <div class="actions"><button type="button" id="btnV2AddShow">Add To Library</button></div>
+                    <div class="v2-folder-actions">
+                        <button type="button" id="btnV2AddShowsFolder">Add Shows (Folder)</button>
+                        <button type="button" id="btnV2AddMoviesFolder">Add Movies (Folder)</button>
+                        <button type="button" id="btnV2AddCommercialsFolder">Add Commercials (Folder)</button>
+                        <button type="button" id="btnV2AddBumpersMulti">Add Bumpers (Multi)</button>
+                        <button type="button" id="btnV2AddSongsFolder">Add Songs (Folder)</button>
+                        <button type="button" id="btnV2AddSongsMulti">Add Songs (Multi)</button>
+                        <button type="button" id="btnV2AddIdentsMulti">Add Idents (Multi)</button>
+                        <button type="button" id="btnV2AddPromosFolder">Add Promos (Folder)</button>
+                    </div>
+                <div id="v2ShowResult" class="result"></div>
+            </div>
+            <div>
+                <h3>Library Items (<span id="v2ShowCount">0</span>)</h3>
+                <input id="v2LibrarySearch" type="text" placeholder="Search library items..." />
+                <div class="actions"><button type="button" id="btnV2LibrarySearch">Search Library</button><button type="button" id="btnV2LibraryReset">Reset</button></div>
+                <div id="v2Shows" class="v2-list"></div>
+            </div>
+        </div>
+
+        <div class="panel grid-2" id="v2guide">
+            <div>
+                <h3>TV Guide Planner</h3>
+                <table class="form-table compact">
+                    <tr><td>Channel</td><td><input id="v2GuideChannel" value="Retro Hits" /></td></tr>
+                    <tr><td>Program</td><td><input id="v2GuideProgram" value="Morning Classics" /></td></tr>
+                    <tr><td>Start</td><td><input id="v2GuideStart" value="08:00" /></td></tr>
+                    <tr><td>Timezone</td><td><select id="v2GuideZone"><option value="Local">Local</option><option value="UTC">UTC</option><option value="EST">EST</option><option value="CET">CET</option><option value="GST">GST</option></select></td></tr>
+                </table>
+                <div class="actions"><button type="button" id="btnV2AddGuide">Add TV Guide Slot</button></div>
+                <div id="v2GuideResult" class="result"></div>
+            </div>
+            <div>
+                <h3>On-Air TV Guide (<span id="v2GuideCount">0</span>)</h3>
+                <div id="v2Guide" class="v2-list"></div>
+            </div>
+        </div>
+
+        <div class="panel grid-2" id="v2ads">
+            <div>
+                <h3>Advertise Your Project</h3>
+                <table class="form-table compact">
+                    <tr><td>Project</td><td><input id="v2AdProject" /></td></tr>
+                    <tr><td>Message</td><td><input id="v2AdMessage" value="Watch now on MeTVe" /></td></tr>
+                </table>
+                <div class="actions"><button type="button" id="btnV2PublishAd">Publish Ad</button></div>
+                <div id="v2AdResult" class="result"></div>
+            </div>
+            <div>
+                <h3>Project Ads (<span id="v2AdCount">0</span>)</h3>
+                <div id="v2Ads" class="v2-list"></div>
+            </div>
+        </div>
+
+
+        <div class="panel grid-2" id="v2nostalgia">
+            <div>
+                <h3>2012 Layout Feature Pack</h3>
+                <ul class="v2-bullet-list">
+                    <li>Classic glass glow mode for 2012 nostalgia look.</li>
+                    <li>Ticker presets for HOT/LIVE/NEWS style operator branding.</li>
+                    <li>One-click creator studio demo presets for cable-style workflow.</li>
+                </ul>
+                <div class="actions">
+                    <button type="button" id="btnV2ToggleLegacyFx">Toggle 2012 Glow FX</button>
+                    <button type="button" id="btnV2TickerPreset">Load HOT/LIVE Ticker Preset</button>
+                </div>
+                <div id="v2NostalgiaResult" class="result"></div>
+            </div>
+            <div>
+                <h3>Preset Status</h3>
+                <div class="v2-profile">
+                    <p><strong>Theme:</strong> <span id="v2LegacyFxState">Glass Aero</span></p>
+                    <p><strong>Ticker:</strong> <span id="v2TickerState">Idle</span></p>
+                    <p><strong>Target:</strong> 2012-era cable-style interface simulation</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel" id="v2reliability">
+            <h3>API / Socket Reliability Status</h3>
+            <p>Channel create/save attempts use API first and automatically fallback to local persistence if API or socket is unavailable.</p>
+            <div class="v2-status-line">API: <span id="v2ApiState">Unknown</span> | Socket: <span id="v2SocketState">Offline</span> | Last Save: <span id="v2LastSave">N/A</span></div>
+            <div class="actions"><button type="button" id="btnV2HealthCheck">Check API / Socket</button><button type="button" id="btnV2ReconnectSocket">Reconnect Socket</button></div>
+            <div id="v2HealthResult" class="result"></div>
+        </div>
+    </div>
+    <script src="Scripts/metve-v2.js" type="text/javascript"></script>
+</body>
+</html>
